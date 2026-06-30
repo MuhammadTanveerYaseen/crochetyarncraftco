@@ -70,6 +70,7 @@ export async function createPolarCheckoutSession({
       success_url: successUrl,
       customer_email: customerEmail,
       customer_name: customerName,
+      allow_discount_codes: true,
       metadata: {
         orderId: orderId
       }
