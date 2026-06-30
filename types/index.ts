@@ -156,6 +156,7 @@ export interface GraphQLContext {
     set: (name: string, value: string, options: object) => void;
     delete: (name: string) => void;
   };
+  request?: any;
 }
 
 // ─── API Pagination ──────────────────────────────────────────────────────────
