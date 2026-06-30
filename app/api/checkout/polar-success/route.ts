@@ -228,6 +228,7 @@ export async function GET(request: Request) {
     const successRedirectUrl = new URL('/checkout-success', request.url);
     successRedirectUrl.searchParams.set('email', customerEmail);
     successRedirectUrl.searchParams.set('orderId', orderId);
+    successRedirectUrl.searchParams.set('total', totalAmount.toString());
     items.forEach(item => {
       successRedirectUrl.searchParams.append('titles', item.title);
       successRedirectUrl.searchParams.append('pdfs', item.pdfUrl);

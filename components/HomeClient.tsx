@@ -151,33 +151,37 @@ function HomeContent() {
     <div className="w-full flex-grow select-none animate-fadeIn">
       
       {/* Hero Section */}
-      <section className="bg-[#FBF7F0] border-b border-[#EEDDCC] py-16 sm:py-20 px-4">
-        <div className="max-w-5xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center gap-1.5 bg-[#A855F7]/10 border border-[#A855F7]/20 text-[#A855F7] text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Premium PDF Patterns</span>
+      <section className="bg-gradient-to-b from-[#FAF6EE] via-[#FFFDF9] to-[#FFFDF9] border-b border-[#EEDDCC] py-20 sm:py-24 px-4 relative overflow-hidden">
+        {/* Subtle Decorative Elements */}
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] aspect-square bg-[#A855F7]/3 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] aspect-square bg-amber-500/3 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="max-w-5xl mx-auto text-center space-y-8 relative z-10">
+          <div className="inline-flex items-center gap-1.5 bg-[#A855F7]/8 border border-[#A855F7]/15 text-[#A855F7] text-xs font-black px-4 py-2 rounded-full uppercase tracking-widest shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#A855F7]" />
+            <span>Premium PDF Shop</span>
           </div>
           
-          <h1 className="font-serif font-black text-4xl sm:text-5xl lg:text-6xl text-[#5C4033] tracking-tight leading-none max-w-4xl mx-auto">
+          <h1 className="font-serif font-black text-4xl sm:text-5xl lg:text-7xl text-[#5C4033] tracking-tight leading-[1.05] max-w-4xl mx-auto">
             Beautiful, Step-by-Step <br className="hidden sm:inline" />
-            <span className="text-[#A855F7] underline decoration-[#A855F7]/20 decoration-wavy underline-offset-8">Crochet Patterns</span> <br />
-            <span className="text-xl sm:text-2xl font-serif font-normal text-gray-500 mt-2 block">from Yarn Craft Co</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#A855F7] to-[#8B5CF6]">Crochet Patterns</span>
+            <span className="text-lg sm:text-2xl font-serif font-normal text-gray-500 mt-3 block tracking-normal">designed for creative makers • by Yarn Craft Co</span>
           </h1>
           
-          <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Start your next cozy project today. Our handcrafted digital patterns include detailed row-by-row instructions, size checklists, and photo guides. Delivered instantly to your inbox.
+          <p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed font-medium">
+            Start your next creative project today. Our premium digital patterns feature detailed row-by-row instructions, size checklists, and photo guides. Delivered instantly to your inbox.
           </p>
 
-          <div className="flex justify-center flex-wrap gap-4 pt-4 text-xs font-semibold text-[#5C4033]">
-            <div className="flex items-center gap-1.5 bg-[#FFFDF9] border border-[#EEDDCC] py-2 px-4 rounded-full">
+          <div className="flex justify-center flex-wrap gap-4 pt-4 text-xs font-bold text-[#5C4033]">
+            <div className="flex items-center gap-1.5 bg-white border border-[#EEDDCC] py-2.5 px-5 rounded-full shadow-xs hover:shadow-sm transition-shadow">
               <BookOpen className="w-4 h-4 text-[#A855F7]" />
               <span>Instant Download</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-[#FFFDF9] border border-[#EEDDCC] py-2 px-4 rounded-full">
+            <div className="flex items-center gap-1.5 bg-white border border-[#EEDDCC] py-2.5 px-5 rounded-full shadow-xs hover:shadow-sm transition-shadow">
               <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
               <span>Easy-to-Follow Guides</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-[#FFFDF9] border border-[#EEDDCC] py-2 px-4 rounded-full">
+            <div className="flex items-center gap-1.5 bg-white border border-[#EEDDCC] py-2.5 px-5 rounded-full shadow-xs hover:shadow-sm transition-shadow">
               <HeartHandshake className="w-4 h-4 text-emerald-500" />
               <span>Help & Maker Support</span>
             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -27,6 +27,18 @@ export default function ProductDetailClient({ product, similarProducts }: Produc
   const router = useRouter();
   const { addToCart, cart } = useCart();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'ViewContent', {
+        content_ids: [product._id],
+        content_name: product.title,
+        content_category: product.category,
+        value: product.salePrice ?? product.price,
+        currency: 'USD'
+      });
+    }
+  }, [product]);
 
   // Check if item is already in cart
   const inCart = !!cart.find(item => item._id === product._id);

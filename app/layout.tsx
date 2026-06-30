@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import ToastContainer from '@/components/ToastContainer';
 import { Suspense } from 'react';
+import FacebookPixel from '@/components/FacebookPixel';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -55,7 +56,8 @@ export default function RootLayout({
       lang="en"
       className={`${poppins.variable} ${fraunces.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#FFFDF9] text-[#1F2937] font-sans selection:bg-[#A855F7]/10 selection:text-[#A855F7]">
+      <body className={`${poppins.variable} ${fraunces.variable} min-h-full flex flex-col bg-[#FFFDF9] text-[#1F2937] font-sans selection:bg-[#A855F7]/10 selection:text-[#A855F7]`}>
+        <FacebookPixel />
         <Suspense fallback={<div className="h-2 w-full bg-[#A855F7] animate-pulse" />}>
           <CartProvider>
             <PromoBar />

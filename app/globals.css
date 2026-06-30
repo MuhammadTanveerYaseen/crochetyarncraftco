@@ -14,9 +14,7 @@
   --muted-text: #6B7280;     /* Muted Gray */
   --yarn-brown: #5C4033;     /* Warm Brown */
 
-  /* Font mappings from Next.js layout */
-  --font-sans: var(--font-poppins);
-  --font-serif: var(--font-fraunces);
+  /* Note: --font-poppins and --font-fraunces are injected by Next.js next/font/google at runtime */
 }
 
 @theme inline {
@@ -30,17 +28,24 @@
   --color-muted-text: var(--muted-text);
   --color-yarn-brown: var(--yarn-brown);
 
-  --font-sans: var(--font-poppins);
-  --font-serif: var(--font-fraunces);
+  /* Tailwind font-sans and font-serif use Next.js injected CSS variables */
+  --font-sans: var(--font-poppins, system-ui, sans-serif);
+  --font-serif: var(--font-fraunces, Georgia, serif);
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-family: var(--font-poppins, 'Poppins', system-ui, sans-serif);
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Ensure all interactive elements remain clickable/selectable even inside select-none containers */
+a, button, [role="button"], input, select, textarea {
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
 }
 
 /* Cozy Custom Button Effects */
@@ -79,13 +84,14 @@ body {
   border-color: var(--yarn-brown);
 }
 
-/* Card hover zoom */
+/* Premium Card Hover zoom and soft glow */
 .hover-scale {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .hover-scale:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 20px -5px rgba(92, 64, 51, 0.1), 0 8px 8px -5px rgba(92, 64, 51, 0.05);
+  transform: translateY(-6px);
+  border-color: var(--primary-accent);
+  box-shadow: 0 20px 25px -5px rgba(168, 85, 247, 0.08), 0 10px 10px -5px rgba(168, 85, 247, 0.04);
 }
 
 /* Scrollbar styling */

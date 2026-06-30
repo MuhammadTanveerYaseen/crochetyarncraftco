@@ -14,10 +14,12 @@ function SuccessContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || 'your email';
   const orderId = searchParams.get('orderId') || `order-${Date.now()}`;
+  const total = searchParams.get('total') || '0';
   
   // Extract lists of titles and pdf paths
   const titles = searchParams.getAll('titles');
   const pdfs = searchParams.getAll('pdfs');
+  const titlesString = titles.join(', ');
 
   const orderedItems = titles.map((title, index) => ({
     title,
@@ -29,33 +31,42 @@ function SuccessContent() {
   useEffect(() => {
     // Clear shopping cart on successful checkout completion
     clearCart();
-  }, [clearCart]);
+
+    // Track Purchase event in Facebook Pixel
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'Purchase', {
+        value: Number(total),
+        currency: 'USD',
+        content_type: 'product',
+        content_name: titlesString,
+        order_id: orderId
+      });
+    }
+  }, [clearCart, total, orderId, titlesString]);
 
   useEffect(() => {
     async function loadRecommendations() {
       const query = `
         query GetRecommendations {
           products(limit: 6) {
-            items {
-              _id
-              title
-              description
-              price
-              salePrice
-              images
-              category
-              difficulty
-              pdfUrl
-              featured
-            }
+            _id
+            title
+            description
+            price
+            salePrice
+            images
+            category
+            difficulty
+            pdfUrl
+            featured
           }
         }
       `;
       try {
         const data = await graphqlRequest(query);
-        if (data?.products?.items) {
+        if (Array.isArray(data?.products)) {
           // Filter out already purchased items in this order
-          const filtered = data.products.items.filter((item: any) => {
+          const filtered = data.products.filter((item: any) => {
             return !pdfs.includes(item.pdfUrl);
           });
           setRecommendations(filtered.slice(0, 3));
@@ -68,8 +79,9 @@ function SuccessContent() {
   }, [pdfs]);
 
 
+
   return (
-    <div className="w-full flex-grow py-16 bg-[#FFFDF9] select-none text-center">
+    <div className="w-full flex-grow py-16 bg-[#FFFDF9] text-center">
       <div className="max-w-3xl mx-auto px-4 space-y-8">
         
         {/* Success Header */}
@@ -169,14 +181,14 @@ function SuccessContent() {
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link 
             href="/profile" 
-            className="btn-primary py-3 px-8 text-sm font-semibold flex items-center justify-center gap-2 w-full sm:w-auto shadow-md"
+            className="btn-primary py-3 px-8 text-sm font-semibold flex items-center justify-center gap-2 w-full sm:w-auto shadow-md no-underline"
           >
             <span>Go to My Profile Library</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link 
             href="/" 
-            className="btn-secondary py-3 px-8 text-sm hover:bg-[#FBF7F0] font-semibold w-full sm:w-auto text-center"
+            className="btn-secondary py-3 px-8 text-sm hover:bg-[#FBF7F0] font-semibold w-full sm:w-auto text-center no-underline block"
           >
             <span>Back to Homepage</span>
           </Link>

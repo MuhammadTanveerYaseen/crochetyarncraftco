@@ -95,6 +95,17 @@ export default function CheckoutPage() {
         throw new Error(resData.error || 'Failed to initialize Polar checkout session');
       }
 
+      // Track InitiateCheckout event in Facebook Pixel
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'InitiateCheckout', {
+          value: Number(total),
+          currency: 'USD',
+          content_ids: cart.map(item => item._id),
+          content_type: 'product',
+          num_items: cart.length
+        });
+      }
+
       // Redirect to Polar checkout page
       window.location.href = resData.url;
     } catch (err: any) {

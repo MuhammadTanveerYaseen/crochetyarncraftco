@@ -81,6 +81,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       saveCart(newCart);
       showToast(`"${item.title}" added to cart!`, 'success');
       setIsCartOpen(true); // Auto-open cart sidebar on add
+
+      // Track AddToCart event in Facebook Pixel
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'AddToCart', {
+          content_ids: [item._id],
+          content_name: item.title,
+          content_type: 'product',
+          value: item.salePrice ?? item.price,
+          currency: 'USD'
+        });
+      }
     } else {
       showToast('This pattern is already in your cart!', 'info');
     }

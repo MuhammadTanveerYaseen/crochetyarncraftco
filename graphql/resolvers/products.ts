@@ -138,12 +138,25 @@ export async function updateProduct(
   const isConnected = await isDbConnected();
 
   if (isConnected) {
-    return await Product.findByIdAndUpdate(id, rest, { new: true });
+    const updateData: any = { ...rest };
+    const unsetData: any = {};
+    if (rest.salePrice === null || rest.salePrice === undefined) {
+      delete updateData.salePrice;
+      unsetData.salePrice = "";
+    }
+    const updateQuery: any = { $set: updateData };
+    if (Object.keys(unsetData).length > 0) {
+      updateQuery.$unset = unsetData;
+    }
+    return await Product.findByIdAndUpdate(id, updateQuery, { new: true });
   }
 
   const idx = inMemoryProducts.findIndex(p => p._id === id);
   if (idx === -1) throw new Error('Product not found');
   inMemoryProducts[idx] = { ...inMemoryProducts[idx], ...rest } as any;
+  if (rest.salePrice === null || rest.salePrice === undefined) {
+    delete (inMemoryProducts[idx] as any).salePrice;
+  }
   return inMemoryProducts[idx];
 }
 
