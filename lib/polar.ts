@@ -19,15 +19,13 @@ interface CreateSessionArgs {
   totalAmount: number;
   orderId: string;
   items: Array<{ productId: string; title: string; price: number; pdfUrl?: string }>;
+  siteUrl?: string;
 }
 
-export async function createPolarCheckoutSession({
-  customerEmail,
-  customerName,
-  totalAmount,
-  orderId,
-  items
-}: CreateSessionArgs): Promise<{ url: string; isMock: boolean }> {
+export async function createPolarCheckoutSession(args: CreateSessionArgs): Promise<{ url: string; isMock: boolean }> {
+  const { customerEmail, customerName, totalAmount, orderId, items, siteUrl } = args;
+  const currentSiteUrl = siteUrl || NEXT_PUBLIC_SITE_URL;
+
   if (!isPolarConfigured) {
     console.warn('Polar.sh credentials missing. Running in Simulated Polar Mode.');
     // In mock mode, we embed order info in the callback url so it works without database lookups too
@@ -43,7 +41,7 @@ export async function createPolarCheckoutSession({
       queryParams.append('pdfs', item.pdfUrl || '/uploads/mock-pattern.pdf');
     });
 
-    const mockSuccessUrl = `${NEXT_PUBLIC_SITE_URL}/api/checkout/polar-success?${queryParams.toString()}`;
+    const mockSuccessUrl = `${currentSiteUrl}/api/checkout/polar-success?${queryParams.toString()}`;
     return {
       url: mockSuccessUrl,
       isMock: true
@@ -51,7 +49,7 @@ export async function createPolarCheckoutSession({
   }
 
   try {
-    const successUrl = `${NEXT_PUBLIC_SITE_URL}/api/checkout/polar-success?checkout_id={CHECKOUT_ID}`;
+    const successUrl = `${currentSiteUrl}/api/checkout/polar-success?checkout_id={CHECKOUT_ID}`;
     
     // Polar API requires price amount as an integer in cents/smallest currency unit
     const priceAmountInCents = Math.round(totalAmount * 100);

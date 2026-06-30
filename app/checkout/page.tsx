@@ -85,7 +85,8 @@ export default function CheckoutPage() {
           customerEmail: email,
           customerName: name,
           items: orderItems,
-          totalAmount: Number(total)
+          totalAmount: Number(total),
+          siteUrl: window.location.origin
         })
       });
 

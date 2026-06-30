@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { customerEmail, customerName, items, totalAmount } = body;
+    const { customerEmail, customerName, items, totalAmount, siteUrl } = body;
 
     if (!customerEmail || !items || !Array.isArray(items) || items.length === 0 || !totalAmount) {
       return NextResponse.json({ success: false, error: "Missing required checkout fields" }, { status: 400 });
@@ -54,7 +54,8 @@ export async function POST(request: Request) {
         title: item.title,
         price: Number(item.price),
         pdfUrl: item.pdfUrl
-      }))
+      })),
+      siteUrl
     });
 
     return NextResponse.json({ 
