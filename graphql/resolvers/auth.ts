@@ -215,6 +215,13 @@ export async function sendBulkPromoEmail(
 
   console.log(`Sending marketing promo email to ${targetEmails.length} segmented users (Segment: ${segment})...`);
 
+  let dynamicSiteUrl: string | undefined = undefined;
+  if (ctx?.request) {
+    const host = ctx.request.headers.get('host') || 'localhost:3000';
+    const proto = ctx.request.headers.get('x-forwarded-proto') || 'http';
+    dynamicSiteUrl = `${proto}://${host}`;
+  }
+
   for (const email of targetEmails) {
     try {
       await sendMarketingEmail({
@@ -222,7 +229,8 @@ export async function sendBulkPromoEmail(
         subject,
         promoCode,
         discountPercent,
-        message
+        message,
+        siteUrl: dynamicSiteUrl
       });
     } catch (err) {
       console.error(`Failed to send marketing email to ${email}:`, err);

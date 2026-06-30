@@ -10,6 +10,7 @@ interface SendPatternEmailArgs {
     price: number;
   }>;
   tempPassword?: string;
+  siteUrl?: string;
 }
 
 let transporterCached: any = null;
@@ -67,10 +68,11 @@ async function getTransporter() {
   }
 }
 
-export async function sendPatternEmail({ toEmail, orderId, total, items, tempPassword }: SendPatternEmailArgs) {
+export async function sendPatternEmail(args: SendPatternEmailArgs) {
+  const { toEmail, orderId, total, items, tempPassword } = args;
   try {
     const transporter = await getTransporter();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const siteUrl = args.siteUrl || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
     // Build items HTML list
     const itemsHtml = items.map((item, idx) => `
@@ -188,12 +190,14 @@ interface SendMarketingEmailArgs {
   promoCode: string;
   discountPercent: number;
   message: string;
+  siteUrl?: string;
 }
 
-export async function sendMarketingEmail({ toEmail, subject, promoCode, discountPercent, message }: SendMarketingEmailArgs) {
+export async function sendMarketingEmail(args: SendMarketingEmailArgs) {
+  const { toEmail, subject, promoCode, discountPercent, message } = args;
   try {
     const transporter = await getTransporter();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const siteUrl = args.siteUrl || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
     const htmlBody = `
       <div style="background-color: #FFFDF9; padding: 24px; font-family: sans-serif; color: #1F2937; max-width: 600px; margin: 0 auto; border: 1px solid #EEDDCC; border-radius: 24px;">

@@ -30,6 +30,10 @@ export async function GET(request: Request) {
   }
 
   try {
+    const host = request.headers.get('host') || 'localhost:3000';
+    const proto = request.headers.get('x-forwarded-proto') || 'http';
+    const dynamicSiteUrl = `${proto}://${host}`;
+
     let orderId = '';
     let customerEmail = '';
     let customerName = '';
@@ -97,7 +101,8 @@ export async function GET(request: Request) {
           orderId,
           total: totalAmount,
           items,
-          tempPassword
+          tempPassword,
+          siteUrl: dynamicSiteUrl
         });
       } catch (err) {
         console.error("Failed to send mock pattern email:", err);
@@ -106,7 +111,7 @@ export async function GET(request: Request) {
       // Real flow: fetch checkout session from Polar API
       const session = await getPolarCheckoutSession(checkoutId);
       
-      if (session.status !== 'succeeded') {
+      if (session.status !== 'succeeded' && session.status !== 'confirmed') {
         // Redirect to checkout with error
         const redirectUrl = new URL('/checkout', request.url);
         redirectUrl.searchParams.set('error', `Polar payment not completed. Status: ${session.status}`);
@@ -191,7 +196,8 @@ export async function GET(request: Request) {
             orderId,
             total: totalAmount,
             items,
-            tempPassword
+            tempPassword,
+            siteUrl: dynamicSiteUrl
           });
         } catch (err) {
           console.error("Failed to send pattern email:", err);

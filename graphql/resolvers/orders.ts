@@ -106,12 +106,20 @@ export async function createOrder(input: CreateOrderInput, ctx: GraphQLContext) 
     resolvedItems.push({ title: item.title, price: item.price, pdfUrl });
   }
 
+  let dynamicSiteUrl: string | undefined = undefined;
+  if (ctx?.request) {
+    const host = ctx.request.headers.get('host') || 'localhost:3000';
+    const proto = ctx.request.headers.get('x-forwarded-proto') || 'http';
+    dynamicSiteUrl = `${proto}://${host}`;
+  }
+
   // Fire-and-forget email dispatch (non-blocking)
   sendPatternEmail({
     toEmail: orderData.customerEmail,
     orderId: savedOrder._id.toString(),
     total: Number(input.totalAmount),
     items: resolvedItems,
+    siteUrl: dynamicSiteUrl
   }).catch(err => console.error('Order email dispatch failed:', err));
 
   return savedOrder;

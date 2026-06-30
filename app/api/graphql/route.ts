@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       source: query,
       rootValue: resolvers,
       variableValues: variables,
-      contextValue: { userId, cookieStore },
+      contextValue: { userId, cookieStore, request },
     });
 
     const response = NextResponse.json(result);
