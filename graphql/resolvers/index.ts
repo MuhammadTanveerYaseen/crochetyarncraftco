@@ -26,6 +26,7 @@ export const resolvers = {
   createProduct: (args: any, ctx: GraphQLContext) => productResolvers.createProduct(args, ctx),
   updateProduct: (args: any, ctx: GraphQLContext) => productResolvers.updateProduct(args, ctx),
   deleteProduct: (args: any, ctx: GraphQLContext) => productResolvers.deleteProduct(args, ctx),
+  categories: () => productResolvers.categories(),
 
   // ── Orders ────────────────────────────────────────────────────────────────
   orders: (args: any, ctx: GraphQLContext) => orderResolvers.orders(args, ctx),
@@ -37,6 +38,9 @@ export const resolvers = {
   register: (args: any, ctx: GraphQLContext) => authResolvers.register(args, ctx),
   login: (args: any, ctx: GraphQLContext) => authResolvers.login(args, ctx),
   logout: (_: any, ctx: GraphQLContext) => authResolvers.logout(_, ctx),
+  users: (_: any, ctx: GraphQLContext) => authResolvers.users(_, ctx),
+  campaigns: (_: any, ctx: GraphQLContext) => authResolvers.campaigns(_, ctx),
+  sendBulkPromoEmail: (args: any, ctx: GraphQLContext) => authResolvers.sendBulkPromoEmail(args, ctx),
 
   // ── Reports ───────────────────────────────────────────────────────────────
   reports: (args: any, ctx: GraphQLContext) => reportResolvers.reports(args, ctx),

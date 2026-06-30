@@ -15,7 +15,7 @@
   --yarn-brown: #5C4033;     /* Warm Brown */
 
   /* Font mappings from Next.js layout */
-  --font-sans: var(--font-outfit);
+  --font-sans: var(--font-poppins);
   --font-serif: var(--font-fraunces);
 }
 
@@ -30,14 +30,14 @@
   --color-muted-text: var(--muted-text);
   --color-yarn-brown: var(--yarn-brown);
 
-  --font-sans: var(--font-sans);
-  --font-serif: var(--font-serif);
+  --font-sans: var(--font-poppins);
+  --font-serif: var(--font-fraunces);
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-poppins), system-ui, sans-serif;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
@@ -125,3 +125,20 @@ details[open] summary svg {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* Custom Fade In Animation for payment tab content switching */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Outfit, Fraunces } from 'next/font/google';
+import { Poppins, Fraunces } from 'next/font/google';
 import './globals.css';
 import { CartProvider } from '@/context/CartContext';
 import PromoBar from '@/components/PromoBar';
@@ -9,10 +9,10 @@ import CartDrawer from '@/components/CartDrawer';
 import ToastContainer from '@/components/ToastContainer';
 import { Suspense } from 'react';
 
-const outfit = Outfit({
+const poppins = Poppins({
   subsets: ['latin'],
-  variable: '--font-outfit',
-  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-poppins',
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
   display: 'swap',
 });
 
@@ -24,8 +24,25 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: 'Yarn Craft Co | Cozy Crochet PDF Patterns',
+  metadataBase: new URL('https://yarncraftco.com'),
+  title: {
+    default: 'Yarn Craft Co | Cozy Crochet PDF Patterns',
+    template: '%s | Yarn Craft Co'
+  },
   description: 'Download beautiful, premium digital crochet and knitting patterns instantly. Step-by-step PDF instructions for plushies, clothing, and home decor.',
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://yarncraftco.com',
+    siteName: 'Yarn Craft Co',
+  },
+  twitter: {
+    card: 'summary_large_image',
+  }
 };
 
 export default function RootLayout({
@@ -36,7 +53,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${outfit.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${poppins.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#FFFDF9] text-[#1F2937] font-sans selection:bg-[#A855F7]/10 selection:text-[#A855F7]">
         <Suspense fallback={<div className="h-2 w-full bg-[#A855F7] animate-pulse" />}>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Library, FileCheck, History, LogOut, ArrowRight, Download, Eye, Award } from 'lucide-react';
+import { User, Library, FileCheck, History, LogOut, ArrowRight, Download, Eye, Award, Gift, Copy } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { graphqlRequest } from '@/lib/graphqlClient';
 import Image from 'next/image';
@@ -47,7 +47,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [patterns, setPatterns] = useState<ResolvedPattern[]>([]);
-  const [activeTab, setActiveTab] = useState<'patterns' | 'orders'>('patterns');
+  const [activeTab, setActiveTab] = useState<'patterns' | 'orders' | 'rewards'>('patterns');
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -285,6 +285,20 @@ export default function ProfilePage() {
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#A855F7] rounded-full" />
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('rewards')}
+            className={`pb-3 text-sm font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
+              activeTab === 'rewards' 
+                ? 'text-[#A855F7]' 
+                : 'text-[#5C4033]/60 hover:text-[#A855F7]'
+            }`}
+          >
+            <Award className="w-4 h-4" />
+            <span>My Rewards & Coupons</span>
+            {activeTab === 'rewards' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#A855F7] rounded-full" />
+            )}
+          </button>
         </div>
 
         {/* Tab Panels */}
@@ -422,6 +436,91 @@ export default function ProfilePage() {
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'rewards' && (
+          <div className="space-y-6 max-w-2xl mx-auto animate-fadeIn">
+            <div className="bg-white border border-[#EEDDCC] rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-[#A855F7] flex-shrink-0">
+                  <Gift className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="font-serif font-black text-xl text-[#5C4033]">Exclusive Member Coupons</h2>
+                  <p className="text-xs text-gray-500">Copy these codes and enter them on the checkout page to redeem your savings.</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Coupon Card 1 */}
+                <div className="border border-dashed border-[#EEDDCC] bg-[#FBF7F0]/40 rounded-2xl p-5 flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
+                  <div className="text-center sm:text-left space-y-1">
+                    <span className="bg-purple-100 text-[#A855F7] text-[10px] font-black px-2.5 py-1 rounded-full uppercase border border-[#A855F7]/10">
+                      {orders.length > 0 ? '20% LOYALTY DISCOUNT' : '10% WELCOME OFFER'}
+                    </span>
+                    <h3 className="font-serif font-bold text-base text-[#5C4033] mt-1.5">
+                      {orders.length > 0 ? 'Returning Customer Reward' : 'New Member Discount'}
+                    </h3>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {orders.length > 0 
+                        ? 'Thank you for your purchase! Enjoy 20% off all digital crochet patterns.' 
+                        : 'Get 10% off your first pattern download from our catalogue.'}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                    <code className="bg-white px-4 py-2 border border-[#EEDDCC] rounded-xl font-mono font-bold text-[#A855F7] text-base tracking-widest">
+                      {orders.length > 0 ? 'LOVEDYARN20' : 'WELCOME10'}
+                    </code>
+                    <button
+                      onClick={() => {
+                        const code = orders.length > 0 ? 'LOVEDYARN20' : 'WELCOME10';
+                        navigator.clipboard.writeText(code);
+                        showToast(`Coupon code "${code}" copied to clipboard!`, 'success');
+                      }}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#5C4033] hover:text-[#A855F7] transition-colors cursor-pointer"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy Code</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Always show a general retargeting code for secondary offer */}
+                {orders.length > 0 && (
+                  <div className="border border-dashed border-[#EEDDCC] bg-[#FBF7F0]/40 rounded-2xl p-5 flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
+                    <div className="text-center sm:text-left space-y-1">
+                      <span className="bg-amber-50 text-amber-800 text-[10px] font-black px-2.5 py-1 rounded-full uppercase border border-amber-200">
+                        15% CREATIVE OFFER
+                      </span>
+                      <h3 className="font-serif font-bold text-base text-[#5C4033] mt-1.5">
+                        Creative Maker Special
+                      </h3>
+                      <p className="text-xs text-gray-500 font-medium">
+                        Get 15% off your next purchase using this creative project retargeting code.
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                      <code className="bg-white px-4 py-2 border border-[#EEDDCC] rounded-xl font-mono font-bold text-amber-700 text-base tracking-widest">
+                        CREATIVE15
+                      </code>
+                      <button
+                        onClick={() => {
+                          const code = 'CREATIVE15';
+                          navigator.clipboard.writeText(code);
+                          showToast(`Coupon code "${code}" copied to clipboard!`, 'success');
+                        }}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#5C4033] hover:text-amber-700 transition-colors cursor-pointer"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy Code</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
           </div>
         )}
 

@@ -23,8 +23,7 @@ const ProductSchema = new Schema<IProduct>({
   salePrice: { type: Number },
   category: { 
     type: String, 
-    required: true,
-    enum: ['amigurumi', 'clothing', 'home-decor', 'accessories', 'holiday']
+    required: true
   },
   difficulty: { 
     type: String, 

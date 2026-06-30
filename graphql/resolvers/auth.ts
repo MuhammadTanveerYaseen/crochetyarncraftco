@@ -3,11 +3,14 @@
  */
 
 import User from '@/models/User';
+import Campaign from '@/models/Campaign';
+import Order from '@/models/Order';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET, JWT_EXPIRES_IN, BCRYPT_ROUNDS, AUTH_COOKIE_NAME, COOKIE_OPTIONS } from '@/lib/config';
 import { validateRegisterInput, validateLoginInput } from '@/lib/validators';
-import { isDbConnected, inMemoryUsers } from './shared';
+import { isDbConnected, inMemoryUsers, assertAdmin } from './shared';
+import { sendMarketingEmail } from '@/lib/email';
 import type { GraphQLContext, RegisterInput, LoginInput } from '@/types';
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -127,4 +130,120 @@ export async function login(input: LoginInput, ctx: GraphQLContext) {
 export async function logout(_: unknown, ctx: GraphQLContext) {
   ctx?.cookieStore?.delete(AUTH_COOKIE_NAME);
   return true;
+}
+
+export async function users(_: unknown, ctx: GraphQLContext) {
+  await assertAdmin(ctx);
+  const isConnected = await isDbConnected();
+  if (isConnected) {
+    const list = await User.find({}).sort({ createdAt: -1 }).lean();
+    return list.map((u: any) => ({
+      _id: u._id.toString(),
+      name: u.name,
+      email: u.email,
+      role: u.role ?? 'user',
+      createdAt: u.createdAt?.toISOString?.() || new Date(u.createdAt).toISOString()
+    }));
+  }
+  return inMemoryUsers;
+}
+
+export async function campaigns(_: unknown, ctx: GraphQLContext) {
+  await assertAdmin(ctx);
+  const isConnected = await isDbConnected();
+  if (isConnected) {
+    const list = await Campaign.find({}).sort({ sentAt: -1 }).lean();
+    return list.map((c: any) => ({
+      _id: c._id.toString(),
+      subject: c.subject,
+      promoCode: c.promoCode,
+      discountPercent: c.discountPercent,
+      message: c.message,
+      segment: c.segment,
+      emailsSentCount: c.emailsSentCount,
+      sentAt: c.sentAt?.toISOString?.() || new Date(c.sentAt).toISOString()
+    }));
+  }
+  return [];
+}
+
+export async function sendBulkPromoEmail(
+  args: { subject: string; promoCode: string; discountPercent: number; message: string; segment: string },
+  ctx: GraphQLContext
+) {
+  await assertAdmin(ctx);
+  const isConnected = await isDbConnected();
+  const { subject, promoCode, discountPercent, message, segment } = args;
+
+  let targetEmails: string[] = [];
+  if (isConnected) {
+    // Determine customer segments based on order history count
+    const allOrders = await Order.find({}).select('customerEmail').lean();
+    const orderCountsByEmail: Record<string, number> = {};
+    for (const o of allOrders) {
+      if (o.customerEmail) {
+        const cleanEmail = o.customerEmail.toLowerCase().trim();
+        orderCountsByEmail[cleanEmail] = (orderCountsByEmail[cleanEmail] || 0) + 1;
+      }
+    }
+
+    const allUsers = await User.find({}).select('email').lean();
+    
+    if (segment === 'non-purchasers') {
+      targetEmails = allUsers
+        .filter(u => !orderCountsByEmail[u.email.toLowerCase().trim()])
+        .map(u => u.email);
+    } else if (segment === 'purchasers') {
+      targetEmails = allUsers
+        .filter(u => (orderCountsByEmail[u.email.toLowerCase().trim()] || 0) >= 1)
+        .map(u => u.email);
+    } else if (segment === 'vips') {
+      targetEmails = allUsers
+        .filter(u => (orderCountsByEmail[u.email.toLowerCase().trim()] || 0) >= 3)
+        .map(u => u.email);
+    } else {
+      // 'all'
+      targetEmails = allUsers.map(u => u.email);
+    }
+  } else {
+    targetEmails = inMemoryUsers.map(u => u.email);
+  }
+
+  if (targetEmails.length === 0) {
+    throw new Error(`No registered users match the selected targeting segment: "${segment}".`);
+  }
+
+  console.log(`Sending marketing promo email to ${targetEmails.length} segmented users (Segment: ${segment})...`);
+
+  for (const email of targetEmails) {
+    try {
+      await sendMarketingEmail({
+        toEmail: email,
+        subject,
+        promoCode,
+        discountPercent,
+        message
+      });
+    } catch (err) {
+      console.error(`Failed to send marketing email to ${email}:`, err);
+    }
+  }
+
+  // Save campaign tracking log to database
+  if (isConnected) {
+    try {
+      await Campaign.create({
+        subject,
+        promoCode,
+        discountPercent,
+        message,
+        segment,
+        emailsSentCount: targetEmails.length
+      });
+    } catch (dbErr) {
+      console.error("Failed to write Campaign log to MongoDB:", dbErr);
+    }
+  }
+
+  return targetEmails.length;
 }

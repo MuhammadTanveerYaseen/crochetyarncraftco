@@ -1,11 +1,19 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, Download, FileText, ArrowRight, Mail } from 'lucide-react';
+import { CheckCircle2, Download, FileText, ArrowRight, Mail, User } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
 
 function SuccessContent() {
+  const { clearCart } = useCart();
+
+  useEffect(() => {
+    // Clear shopping cart on successful checkout completion
+    clearCart();
+  }, [clearCart]);
+
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || 'your email';
   const orderId = searchParams.get('orderId') || `order-${Date.now()}`;
@@ -18,6 +26,7 @@ function SuccessContent() {
     title,
     pdfUrl: pdfs[index] || '/uploads/mock-pattern.pdf'
   }));
+
 
   return (
     <div className="w-full flex-grow py-16 bg-[#FFFDF9] select-none text-center">
@@ -50,6 +59,19 @@ function SuccessContent() {
               <Mail className="w-4 h-4 text-[#A855F7]" />
               {email}
             </span>
+          </div>
+        </div>
+
+        {/* Account Info Notice */}
+        <div className="p-4 bg-purple-50 border border-purple-100 rounded-2xl max-w-xl mx-auto flex items-start gap-3 text-left animate-fadeIn">
+          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-[#A855F7] flex-shrink-0">
+            <User className="w-4.5 h-4.5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-[#5C4033] uppercase tracking-wider">Account Profile Active</h4>
+            <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+              We have automatically logged you into your new profile. We sent your temporary password credentials to <strong>{email}</strong> so you can sign in next time.
+            </p>
           </div>
         </div>
 
@@ -103,14 +125,20 @@ function SuccessContent() {
           </div>
         </div>
 
-        {/* Action button */}
-        <div className="pt-4">
+        {/* Action buttons */}
+        <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link 
+            href="/profile" 
+            className="btn-primary py-3 px-8 text-sm font-semibold flex items-center justify-center gap-2 w-full sm:w-auto shadow-md"
+          >
+            <span>Go to My Profile Library</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
           <Link 
             href="/" 
-            className="inline-flex items-center gap-2 btn-secondary py-3 px-8 text-sm hover:bg-[#FBF7F0] font-semibold"
+            className="btn-secondary py-3 px-8 text-sm hover:bg-[#FBF7F0] font-semibold w-full sm:w-auto text-center"
           >
             <span>Back to Homepage</span>
-            <ArrowRight className="w-4 h-4 text-[#A855F7]" />
           </Link>
         </div>
 

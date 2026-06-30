@@ -161,3 +161,14 @@ export async function deleteProduct({ id }: { id: string }, ctx: GraphQLContext)
   if (idx !== -1) inMemoryProducts.splice(idx, 1);
   return inMemoryProducts.length < before;
 }
+
+export async function categories() {
+  const isConnected = await isDbConnected();
+  if (isConnected) {
+    const list = await Product.distinct('category');
+    return list.filter(Boolean);
+  }
+  // Fallback for mock mode
+  const list = inMemoryProducts.map(p => p.category).filter(Boolean);
+  return Array.from(new Set(list));
+}

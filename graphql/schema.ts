@@ -42,6 +42,17 @@ export const schema = buildSchema(`
     createdAt: String
   }
 
+  type Campaign {
+    _id: ID!
+    subject: String!
+    promoCode: String!
+    discountPercent: Int!
+    message: String!
+    segment: String!
+    emailsSentCount: Int!
+    sentAt: String!
+  }
+
   type Report {
     _id: ID!
     name: String!
@@ -77,6 +88,9 @@ export const schema = buildSchema(`
     product(id: ID!): Product
     orders(limit: Int, offset: Int): [Order!]!
     dashboardStats: DashboardStats!
+    categories: [String!]!
+    users: [User!]!
+    campaigns: [Campaign!]!
     
     # Session Queries
     me: User
@@ -135,6 +149,9 @@ export const schema = buildSchema(`
     # Report Mutations
     createReport(name: String!, email: String!, subject: String!, message: String!): Report!
     resolveReport(id: ID!): Report!
+
+    # Marketing Mutations
+    sendBulkPromoEmail(subject: String!, promoCode: String!, discountPercent: Int!, message: String!, segment: String!): Int!
   }
 `);
 export default schema;

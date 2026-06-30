@@ -101,8 +101,8 @@ export function validateProductInput(input: CreateProductInput): void {
       'Sale price must be less than the regular price', 'salePrice');
   }
 
-  assert(VALID_CATEGORIES.includes(input.category as any),
-    `Category must be one of: ${VALID_CATEGORIES.join(', ')}`, 'category');
+  assert(typeof input.category === 'string' && input.category.trim().length > 0,
+    'Category must be a non-empty string', 'category');
 
   assert(VALID_DIFFICULTIES.includes(input.difficulty as any),
     `Difficulty must be one of: ${VALID_DIFFICULTIES.join(', ')}`, 'difficulty');

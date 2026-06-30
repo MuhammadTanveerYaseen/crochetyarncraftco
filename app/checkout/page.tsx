@@ -4,21 +4,31 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
-import { ArrowLeft, Lock, CreditCard, Mail, User, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Lock, Mail, User, ShieldCheck } from 'lucide-react';
 import Image from 'next/image';
 import { graphqlRequest } from '@/lib/graphqlClient';
 
 export default function CheckoutPage() {
-  const { cart, originalTotal, discount, total, clearCart } = useCart();
+  const { cart, originalTotal, discount, total } = useCart();
   const router = useRouter();
 
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvv, setCvv] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load error from query params if redirected back from checkout callback
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlError = params.get('error');
+      if (urlError) {
+        setError(urlError);
+        // Clean URL query parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
 
   // Redirect to catalog if cart is empty, unless we are currently submitting/successing
   useEffect(() => {
@@ -58,66 +68,37 @@ export default function CheckoutPage() {
     setSubmitting(true);
     setError(null);
 
-    // Simulate short processing delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
     try {
       const orderItems = cart.map(item => ({
         productId: item._id,
         title: item.title,
-        price: item.salePrice ?? item.price
+        price: item.salePrice ?? item.price,
+        pdfUrl: item.pdfUrl
       }));
 
-      const checkoutMutation = `
-        mutation PlaceOrder($email: String!, $items: [OrderItemInput!]!, $total: Float!) {
-          createOrder(customerEmail: $email, items: $items, totalAmount: $total) {
-            _id
-            customerEmail
-            totalAmount
-            items {
-              productId
-              title
-              price
-            }
-          }
-        }
-      `;
-
-      const data = await graphqlRequest(checkoutMutation, {
-        email,
-        items: orderItems.map(item => ({
-          productId: item.productId,
-          title: item.title,
-          price: Number(item.price)
-        })),
-        total: Number(total)
+      const response = await fetch('/api/checkout/polar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          customerEmail: email,
+          customerName: name,
+          items: orderItems,
+          totalAmount: Number(total)
+        })
       });
 
-      if (data.createOrder) {
-        const orderData = data.createOrder;
-        // Clear cart first
-        clearCart();
-        // Redirect to success, sending details in query parameters for simple delivery display
-        const queryParams = new URLSearchParams();
-        queryParams.set('email', email);
-        queryParams.set('orderId', orderData._id || `mock-order-${Date.now()}`);
-        
-        // Pass products details for download
-        orderData.items.forEach((item: any) => {
-          // Find original PDF path from cart to let them download it
-          const original = cart.find(c => c._id === item.productId || c.title === item.title);
-          queryParams.append('titles', item.title);
-          queryParams.append('pdfs', original?.pdfUrl || '/uploads/mock-pattern.pdf');
-        });
-
-        router.push(`/checkout-success?${queryParams.toString()}`);
-      } else {
-        setError('Failed to complete checkout');
+      const resData = await response.json();
+      if (!response.ok || !resData.success) {
+        throw new Error(resData.error || 'Failed to initialize Polar checkout session');
       }
+
+      // Redirect to Polar checkout page
+      router.push(resData.url);
     } catch (err: any) {
-      console.error('Checkout submit error:', err);
+      console.error('Polar checkout initialization error:', err);
       setError(err.message || 'Payment system encountered an error');
-    } finally {
       setSubmitting(false);
     }
   };
@@ -146,7 +127,7 @@ export default function CheckoutPage() {
               
               <div className="space-y-4">
                 <h3 className="font-serif font-bold text-lg text-[#5C4033] border-b border-[#FFF8EF] pb-2">
-                  1. Contact Information
+                  Customer Information
                 </h3>
                 
                 {/* Email Input */}
@@ -183,54 +164,27 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <h3 className="font-serif font-bold text-lg text-[#5C4033] border-b border-[#FFF8EF] pb-2">
-                  2. Payment Details
-                </h3>
-
-                {/* Mock Card Input */}
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[#5C4033] uppercase">Card Number</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        required
-                        maxLength={19}
-                        placeholder="4111 2222 3333 4444"
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim())}
-                        className="w-full bg-[#FBF7F0] border border-[#EEDDCC] focus:border-[#A855F7] rounded-xl py-2.5 px-4 pl-10 text-sm text-[#1F2937] outline-none font-mono"
-                      />
-                      <CreditCard className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    </div>
+              <div className="p-5 rounded-2xl bg-[#FAF5FF]/30 border border-[#EEDDCC] space-y-4">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0 border border-purple-100">
+                    <ShieldCheck className="w-4.5 h-4.5 text-[#A855F7]" />
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-[#5C4033] uppercase">Expiry (MM/YY)</label>
-                      <input
-                        type="text"
-                        required
-                        maxLength={5}
-                        placeholder="12/28"
-                        value={expiry}
-                        onChange={(e) => setExpiry(e.target.value)}
-                        className="w-full bg-[#FBF7F0] border border-[#EEDDCC] focus:border-[#A855F7] rounded-xl py-2.5 px-4 text-sm text-[#1F2937] outline-none text-center font-mono"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-[#5C4033] uppercase">Security Code (CVV)</label>
-                      <input
-                        type="password"
-                        required
-                        maxLength={4}
-                        placeholder="123"
-                        value={cvv}
-                        onChange={(e) => setCvv(e.target.value)}
-                        className="w-full bg-[#FBF7F0] border border-[#EEDDCC] focus:border-[#A855F7] rounded-xl py-2.5 px-4 text-sm text-[#1F2937] outline-none text-center font-mono"
-                      />
-                    </div>
+                  <div>
+                    <h4 className="font-serif font-bold text-sm text-[#5C4033]">Secure Checkout via Polar.sh</h4>
+                    <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                      You will be redirected to the Polar.sh hosted checkout to securely pay. Polar supports Credit Card, Apple Pay, Google Pay, and other local payment methods.
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Credit card/payment badges to improve credibility */}
+                <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-[#EEDDCC]/55 opacity-70">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Accepted Payments:</span>
+                  <div className="flex gap-2">
+                    <div className="px-2 py-0.5 text-[9px] font-bold border border-gray-300 rounded text-gray-500 bg-white">VISA</div>
+                    <div className="px-2 py-0.5 text-[9px] font-bold border border-gray-300 rounded text-gray-500 bg-white">MC</div>
+                    <div className="px-2 py-0.5 text-[9px] font-bold border border-gray-300 rounded text-gray-500 bg-white">Apple Pay</div>
+                    <div className="px-2 py-0.5 text-[9px] font-bold border border-gray-300 rounded text-gray-500 bg-white">Google Pay</div>
                   </div>
                 </div>
               </div>
@@ -245,24 +199,24 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full btn-primary py-4 text-base font-bold flex items-center justify-center gap-2 shadow-lg disabled:bg-gray-400 disabled:shadow-none"
+                className="w-full btn-primary py-4 text-base font-bold flex items-center justify-center gap-2 shadow-lg disabled:bg-gray-400 disabled:shadow-none cursor-pointer"
               >
                 {submitting ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    <span>Processing Transaction...</span>
+                    <span>Redirecting to Payment...</span>
                   </>
                 ) : (
                   <>
                     <Lock className="w-5 h-5" />
-                    <span>Authorize Payment & Download (${total.toFixed(2)})</span>
+                    <span>Proceed to Secure Payment (${total.toFixed(2)})</span>
                   </>
                 )}
               </button>
 
               <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>SSL Encryption Secure payment gateway checkout.</span>
+                <span>SSL Encryption Secure payment gateway.</span>
               </div>
 
             </form>
@@ -334,3 +288,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+

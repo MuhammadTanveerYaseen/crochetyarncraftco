@@ -67,14 +67,51 @@ export default function ProductDetailClient({ product, similarProducts }: Produc
           
           {/* Left Column: Image Gallery (lg:col-span-7) */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="relative aspect-square w-full rounded-3xl overflow-hidden border border-[#EEDDCC] bg-[#FBF7F0]">
+            <div className="relative aspect-square w-full rounded-3xl overflow-hidden border border-[#EEDDCC] bg-[#FBF7F0] group">
               <Image
                 src={product.images[activeImageIndex] || 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80'}
                 alt={product.title}
                 fill
                 priority
-                className="object-cover"
+                className="object-cover transition-all duration-500 ease-in-out"
               />
+
+              {/* Slider Next/Prev Chevrons */}
+              {product.images && product.images.length > 1 && (
+                <>
+                  <button
+                    onClick={() => {
+                      setActiveImageIndex(prev => (prev === 0 ? product.images.length - 1 : prev - 1));
+                    }}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white text-[#5C4033] hover:text-[#A855F7] border border-[#EEDDCC] flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 z-10 cursor-pointer opacity-0 group-hover:opacity-100"
+                    aria-label="Previous image"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveImageIndex(prev => (prev === product.images.length - 1 ? 0 : prev + 1));
+                    }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white text-[#5C4033] hover:text-[#A855F7] border border-[#EEDDCC] flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 z-10 cursor-pointer opacity-0 group-hover:opacity-100"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+
+                  {/* Slider Dots */}
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 bg-[#5C4033]/20 px-3 py-1.5 rounded-full backdrop-blur-xs">
+                    {product.images.map((_: any, idx: number) => (
+                      <button
+                        key={idx}
+                        onClick={() => setActiveImageIndex(idx)}
+                        className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
+                          activeImageIndex === idx ? 'bg-white scale-125' : 'bg-white/50'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
             
             {/* Image Selector Thumbnails */}

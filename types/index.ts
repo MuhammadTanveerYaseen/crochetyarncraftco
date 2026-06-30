@@ -6,12 +6,7 @@
 
 // ─── Product ────────────────────────────────────────────────────────────────
 
-export type ProductCategory =
-  | 'amigurumi'
-  | 'clothing'
-  | 'home-decor'
-  | 'accessories'
-  | 'holiday';
+export type ProductCategory = string;
 
 export type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 
