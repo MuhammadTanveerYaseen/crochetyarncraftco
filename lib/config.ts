@@ -74,7 +74,7 @@ export const CLOUDINARY_CONFIG = {
 // ─── Site ─────────────────────────────────────────────────────────────────────
 
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://yarncraftco.com';
 
 export const SUPPORT_EMAIL = 'support@yarncraftco.com';
 
