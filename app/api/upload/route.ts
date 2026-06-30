@@ -26,6 +26,11 @@ if (isCloudinaryConfigured) {
 // Upload buffer streaming helper for Cloudinary
 const uploadToCloudinary = (buffer: Buffer, filename: string): Promise<any> => {
   return new Promise((resolve, reject) => {
+    // Set a 5-second timeout to prevent hanging the request if Cloudinary connection fails
+    const timeout = setTimeout(() => {
+      reject(new Error('Cloudinary upload timed out (5s limit reached)'));
+    }, 5000);
+
     // Determine folder and resource type
     const isPdf = filename.toLowerCase().endsWith('.pdf');
     const options = {
@@ -34,12 +39,24 @@ const uploadToCloudinary = (buffer: Buffer, filename: string): Promise<any> => {
       public_id: filename.substring(0, filename.lastIndexOf('.')) || filename
     };
 
-    const uploadStream = cloudinary.uploader.upload_stream(options, (error, result) => {
-      if (error) return reject(error);
-      resolve(result);
-    });
-    
-    uploadStream.end(buffer);
+    try {
+      const uploadStream = cloudinary.uploader.upload_stream(options, (error, result) => {
+        clearTimeout(timeout);
+        if (error) return reject(error);
+        resolve(result);
+      });
+      
+      // Prevent Node.js process crashes due to unhandled stream errors (e.g. connection resets or DNS errors)
+      uploadStream.on('error', (err) => {
+        clearTimeout(timeout);
+        reject(err);
+      });
+
+      uploadStream.end(buffer);
+    } catch (err) {
+      clearTimeout(timeout);
+      reject(err);
+    }
   });
 };
 

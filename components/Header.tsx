@@ -13,7 +13,7 @@ export default function Header() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [searchVal, setSearchVal] = useState('');
-  const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role?: string } | null>(null);
 
   useEffect(() => {
     async function loadUser() {
@@ -23,6 +23,7 @@ export default function Header() {
             me {
               name
               email
+              role
             }
           }
         `;
@@ -107,15 +108,17 @@ export default function Header() {
             </button>
 
             {/* Admin Dashboard Navigation */}
-            <Link 
-              href="/admin"
-              className={`p-2 rounded-full transition-colors flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 border border-[#EEDDCC] hover:bg-[#FBF7F0] ${
-                pathname.startsWith('/admin') ? 'bg-[#A855F7]/10 border-[#A855F7] text-[#A855F7]' : 'text-[#5C4033]'
-              }`}
-            >
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Admin</span>
-            </Link>
+            {currentUser?.role === 'admin' && (
+              <Link 
+                href="/admin"
+                className={`p-2 rounded-full transition-colors flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 border border-[#EEDDCC] hover:bg-[#FBF7F0] ${
+                  pathname.startsWith('/admin') ? 'bg-[#A855F7]/10 border-[#A855F7] text-[#A855F7]' : 'text-[#5C4033]'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                <span className="hidden sm:inline">Admin</span>
+              </Link>
+            )}
 
             {/* User Session Link */}
             {currentUser ? (

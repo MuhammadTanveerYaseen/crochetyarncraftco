@@ -56,7 +56,9 @@ export default function AdminDashboard() {
   const [sendingPromo, setSendingPromo] = useState(false);
   
   const [campaignsList, setCampaignsList] = useState<any[]>([]);
-  const [promoSegment, setPromoSegment] = useState<'all' | 'non-purchasers' | 'purchasers' | 'vips'>('all');
+  const [promoSegment, setPromoSegment] = useState<string>('all');
+  const [targetIndividualEmail, setTargetIndividualEmail] = useState('');
+  const [targetCustomEmails, setTargetCustomEmails] = useState('');
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -303,7 +305,32 @@ export default function AdminDashboard() {
       return;
     }
 
-    if (!confirm(`Are you sure you want to broadcast this retargeting campaign email to the selected targeting segment: "${promoSegment}"?`)) {
+    let finalSegment = promoSegment;
+    let displaySegment = promoSegment;
+
+    if (promoSegment === 'individual' || promoSegment.startsWith('individual:')) {
+      const email = promoSegment.startsWith('individual:') ? promoSegment.substring(11).trim() : targetIndividualEmail.trim();
+      if (!email || !email.includes('@')) {
+        showToast('Please enter a valid individual target email address.', 'error');
+        return;
+      }
+      finalSegment = `individual:${email}`;
+      displaySegment = `Individual (${email})`;
+    } else if (promoSegment === 'custom' || promoSegment.startsWith('custom:')) {
+      const emailsStr = promoSegment.startsWith('custom:') ? promoSegment.substring(7).trim() : targetCustomEmails.trim();
+      const sanitizedEmails = emailsStr
+        .split(',')
+        .map(e => e.trim().toLowerCase())
+        .filter(e => e && e.includes('@'));
+      if (sanitizedEmails.length === 0) {
+        showToast('Please enter at least one valid email address in the custom list.', 'error');
+        return;
+      }
+      finalSegment = `custom:${sanitizedEmails.join(',')}`;
+      displaySegment = `Custom List (${sanitizedEmails.length} emails)`;
+    }
+
+    if (!confirm(`Are you sure you want to broadcast this retargeting campaign email to the selected targeting segment: "${displaySegment}"?`)) {
       return;
     }
 
@@ -320,7 +347,7 @@ export default function AdminDashboard() {
         promoCode: promoCodeInput,
         discountPercent: pct,
         message: promoMessageText,
-        segment: promoSegment
+        segment: finalSegment
       });
 
       if (data && data.sendBulkPromoEmail !== undefined) {
@@ -456,6 +483,9 @@ export default function AdminDashboard() {
       setStatusMessage({ type: 'error', text: err.message || 'Failed to upload image' });
     } finally {
       setImageUploading(false);
+      if (e.target) {
+        e.target.value = '';
+      }
     }
   };
 
@@ -488,6 +518,9 @@ export default function AdminDashboard() {
       setStatusMessage({ type: 'error', text: err.message || 'Failed to upload PDF' });
     } finally {
       setPdfUploading(false);
+      if (e.target) {
+        e.target.value = '';
+      }
     }
   };
 
@@ -1106,6 +1139,7 @@ export default function AdminDashboard() {
                       <th className="py-3.5 px-4 font-black">System Role</th>
                       <th className="py-3.5 px-4 font-black">Account Email</th>
                       <th className="py-3.5 px-4 font-black">Registration Date</th>
+                      <th className="py-3.5 px-4 text-center font-black">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#FFF8EF]">
@@ -1134,6 +1168,20 @@ export default function AdminDashboard() {
                           </td>
                           <td className="py-4 px-4 text-gray-600 font-semibold">{user.email}</td>
                           <td className="py-4 px-4 text-gray-400 font-semibold">{dateStr}</td>
+                          <td className="py-4 px-4 text-center">
+                            <button
+                              onClick={() => {
+                                setPromoSegment(`individual:${user.email}`);
+                                setTargetIndividualEmail(user.email);
+                                setMarketingOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1 bg-[#A855F7]/10 hover:bg-[#A855F7]/20 border border-[#A855F7]/20 text-[#A855F7] text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+                              title="Retarget User"
+                            >
+                              <Megaphone className="w-3.5 h-3.5" />
+                              <span>Retarget</span>
+                            </button>
+                          </td>
                         </tr>
                       );
                     })}
@@ -1713,16 +1761,63 @@ export default function AdminDashboard() {
             <div className="space-y-1">
               <label className="text-xs font-bold uppercase text-[#5C4033]">Targeting Segment *</label>
               <select
-                value={promoSegment}
-                onChange={(e: any) => setPromoSegment(e.target.value)}
+                value={promoSegment.startsWith('individual:') ? 'individual' : promoSegment.startsWith('custom:') ? 'custom' : promoSegment}
+                onChange={(e: any) => {
+                  const val = e.target.value;
+                  if (val === 'individual') {
+                    setPromoSegment(`individual:${targetIndividualEmail}`);
+                  } else if (val === 'custom') {
+                    setPromoSegment(`custom:${targetCustomEmails}`);
+                  } else {
+                    setPromoSegment(val);
+                  }
+                }}
                 className="w-full bg-[#FBF7F0] border border-[#EEDDCC] focus:border-[#A855F7] rounded-xl py-2.5 px-4 text-xs text-[#1F2937] outline-none cursor-pointer font-semibold animate-fadeIn"
               >
                 <option value="all">📢 Broadcast (All Registered Users)</option>
                 <option value="non-purchasers">🌸 Leads (Users with 0 Purchases)</option>
                 <option value="purchasers">🛒 Active Buyers (Users with 1+ Purchases)</option>
                 <option value="vips">⭐ VIP Customers (Users with 3+ Purchases)</option>
+                <option value="individual">👤 Individual (Single Email Address)</option>
+                <option value="custom">📋 Custom List (Comma-separated Email List)</option>
               </select>
             </div>
+
+            {(promoSegment === 'individual' || promoSegment.startsWith('individual:')) && (
+              <div className="space-y-1 animate-fadeIn">
+                <label className="text-xs font-bold uppercase text-[#5C4033]">Target Email Address *</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="customer@example.com"
+                  value={targetIndividualEmail}
+                  onChange={(e) => {
+                    const email = e.target.value;
+                    setTargetIndividualEmail(email);
+                    setPromoSegment(`individual:${email}`);
+                  }}
+                  className="w-full bg-[#FBF7F0] border border-[#EEDDCC] focus:border-[#A855F7] rounded-xl py-2.5 px-4 text-xs text-[#1F2937] outline-none"
+                />
+              </div>
+            )}
+
+            {(promoSegment === 'custom' || promoSegment.startsWith('custom:')) && (
+              <div className="space-y-1 animate-fadeIn">
+                <label className="text-xs font-bold uppercase text-[#5C4033]">Target Email List (Comma-separated) *</label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="user1@example.com, user2@example.com, user3@example.com"
+                  value={targetCustomEmails}
+                  onChange={(e) => {
+                    const emails = e.target.value;
+                    setTargetCustomEmails(emails);
+                    setPromoSegment(`custom:${emails}`);
+                  }}
+                  className="w-full bg-[#FBF7F0] border border-[#EEDDCC] focus:border-[#A855F7] rounded-xl py-2.5 px-4 text-xs text-[#1F2937] outline-none resize-none leading-relaxed"
+                />
+              </div>
+            )}
 
             <div className="space-y-1">
               <label className="text-xs font-bold uppercase text-[#5C4033]">Email Subject *</label>

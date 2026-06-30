@@ -176,37 +176,48 @@ export async function sendBulkPromoEmail(
   const { subject, promoCode, discountPercent, message, segment } = args;
 
   let targetEmails: string[] = [];
-  if (isConnected) {
-    // Determine customer segments based on order history count
-    const allOrders = await Order.find({}).select('customerEmail').lean();
-    const orderCountsByEmail: Record<string, number> = {};
-    for (const o of allOrders) {
-      if (o.customerEmail) {
-        const cleanEmail = o.customerEmail.toLowerCase().trim();
-        orderCountsByEmail[cleanEmail] = (orderCountsByEmail[cleanEmail] || 0) + 1;
-      }
-    }
-
-    const allUsers = await User.find({}).select('email').lean();
-    
-    if (segment === 'non-purchasers') {
-      targetEmails = allUsers
-        .filter(u => !orderCountsByEmail[u.email.toLowerCase().trim()])
-        .map(u => u.email);
-    } else if (segment === 'purchasers') {
-      targetEmails = allUsers
-        .filter(u => (orderCountsByEmail[u.email.toLowerCase().trim()] || 0) >= 1)
-        .map(u => u.email);
-    } else if (segment === 'vips') {
-      targetEmails = allUsers
-        .filter(u => (orderCountsByEmail[u.email.toLowerCase().trim()] || 0) >= 3)
-        .map(u => u.email);
-    } else {
-      // 'all'
-      targetEmails = allUsers.map(u => u.email);
-    }
+  if (segment.startsWith('individual:')) {
+    const email = segment.substring(11).trim();
+    if (email) targetEmails = [email];
+  } else if (segment.startsWith('custom:')) {
+    targetEmails = segment
+      .substring(7)
+      .split(',')
+      .map(e => e.trim().toLowerCase())
+      .filter(e => e && e.includes('@'));
   } else {
-    targetEmails = inMemoryUsers.map(u => u.email);
+    if (isConnected) {
+      // Determine customer segments based on order history count
+      const allOrders = await Order.find({}).select('customerEmail').lean();
+      const orderCountsByEmail: Record<string, number> = {};
+      for (const o of allOrders) {
+        if (o.customerEmail) {
+          const cleanEmail = o.customerEmail.toLowerCase().trim();
+          orderCountsByEmail[cleanEmail] = (orderCountsByEmail[cleanEmail] || 0) + 1;
+        }
+      }
+
+      const allUsers = await User.find({}).select('email').lean();
+      
+      if (segment === 'non-purchasers') {
+        targetEmails = allUsers
+          .filter(u => !orderCountsByEmail[u.email.toLowerCase().trim()])
+          .map(u => u.email);
+      } else if (segment === 'purchasers') {
+        targetEmails = allUsers
+          .filter(u => (orderCountsByEmail[u.email.toLowerCase().trim()] || 0) >= 1)
+          .map(u => u.email);
+      } else if (segment === 'vips') {
+        targetEmails = allUsers
+          .filter(u => (orderCountsByEmail[u.email.toLowerCase().trim()] || 0) >= 3)
+          .map(u => u.email);
+      } else {
+        // 'all'
+        targetEmails = allUsers.map(u => u.email);
+      }
+    } else {
+      targetEmails = inMemoryUsers.map(u => u.email);
+    }
   }
 
   if (targetEmails.length === 0) {

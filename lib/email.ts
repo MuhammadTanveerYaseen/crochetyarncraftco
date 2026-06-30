@@ -74,88 +74,110 @@ export async function sendPatternEmail(args: SendPatternEmailArgs) {
     const transporter = await getTransporter();
     const siteUrl = args.siteUrl || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
-    // Build items HTML list
+    // Build items HTML list (Etsy row style)
     const itemsHtml = items.map((item, idx) => `
-      <tr style="border-bottom: 1px solid #EEDDCC;">
-        <td style="padding: 12px 8px; font-family: sans-serif; font-size: 14px; color: #5C4033; font-weight: bold;">
+      <tr style="border-bottom: 1px solid #F1ECE6;">
+        <td style="padding: 16px 8px; font-family: sans-serif; font-size: 14px; color: #5C4033; font-weight: bold; line-height: 1.4;">
           ${item.title}
         </td>
-        <td style="padding: 12px 8px; font-family: sans-serif; font-size: 14px; text-align: right; color: #A855F7; font-weight: bold;">
+        <td style="padding: 16px 8px; font-family: sans-serif; font-size: 14px; text-align: right; color: #A855F7; font-weight: 800;">
           $${item.price.toFixed(2)}
         </td>
-        <td style="padding: 12px 8px; text-align: right;">
-          <a href="${siteUrl}${item.pdfUrl}" download style="background-color: #A855F7; color: #ffffff; text-decoration: none; font-size: 12px; font-weight: bold; padding: 6px 12px; border-radius: 8px; display: inline-block;">
-            Download PDF
+        <td style="padding: 16px 8px; text-align: right;">
+          <a href="${siteUrl}${item.pdfUrl}" download style="background-color: #A855F7; color: #ffffff; text-decoration: none; font-family: sans-serif; font-size: 11px; font-weight: bold; padding: 8px 16px; border-radius: 9999px; display: inline-block;">
+            Download
           </a>
         </td>
       </tr>
     `).join('');
 
     const profileHtml = tempPassword ? `
-      <div style="background-color: #FAF5FF; border: 1px solid #EEDDCC; border-radius: 16px; padding: 16px; margin: 20px 0; font-size: 13px; color: #5C4033; line-height: 1.5;">
-        <h3 style="color: #A855F7; margin-top: 0; margin-bottom: 8px; font-family: serif; font-size: 15px;">Your Account Profile Created</h3>
-        <p style="margin: 4px 0 8px 0; font-size: 12px; color: #6B7280;">We automatically created a user profile for you under this email address so you can access your purchased patterns at any time in the future.</p>
-        <div style="margin-bottom: 4px;"><strong>Login Email:</strong> <span style="font-family: monospace; font-weight: bold;">${toEmail}</span></div>
-        <div><strong>Temporary Password:</strong> <code style="background-color: #FFFDF9; padding: 2px 6px; border: 1px dashed #A855F7; border-radius: 4px; font-family: monospace; font-size: 13px; font-weight: bold; color: #A855F7;">${tempPassword}</code></div>
-        <p style="margin: 8px 0 0 0; font-size: 11px; color: #9CA3AF; font-style: italic;">We recommend changing this password after logging in for the first time.</p>
+      <div style="background-color: #FAF5FF; border: 1px solid #EEDDCC; border-radius: 12px; padding: 18px; margin: 24px 0; font-family: sans-serif; font-size: 13px; color: #5C4033; line-height: 1.6;">
+        <h3 style="color: #A855F7; margin-top: 0; margin-bottom: 8px; font-family: Georgia, serif; font-size: 15px; font-weight: bold;">Your Maker Profile is Ready</h3>
+        <p style="margin: 4px 0 12px 0; font-size: 12px; color: #7F7F8C;">We've created a secure profile under this email so you can access your purchased crochet patterns from any device at any time.</p>
+        <div style="margin-bottom: 6px; font-size: 12px;"><strong>Login Email:</strong> <span style="font-family: monospace; font-weight: bold; color: #1F2937;">${toEmail}</span></div>
+        <div style="font-size: 12px;"><strong>Temporary Password:</strong> <code style="background-color: #FFFDF9; padding: 2px 6px; border: 1px dashed #A855F7; border-radius: 4px; font-family: monospace; font-size: 13px; font-weight: bold; color: #A855F7;">${tempPassword}</code></div>
+        <p style="margin: 12px 0 0 0; font-size: 11px; color: #9CA3AF; font-style: italic;">We recommend changing this password in your profile settings after logging in.</p>
       </div>
     ` : '';
 
     const htmlBody = `
-      <div style="background-color: #FFFDF9; padding: 24px; font-family: sans-serif; color: #1F2937; max-width: 600px; margin: 0 auto; border: 1px solid #EEDDCC; border-radius: 24px;">
-        <div style="text-align: center; border-bottom: 2px solid #A855F7; padding-bottom: 16px; margin-bottom: 20px;">
-          <h1 style="color: #5C4033; font-family: serif; margin: 0; font-size: 28px;">Yarn<span style="color: #A855F7;">Craft Co</span></h1>
-          <p style="margin: 4px 0 0 0; font-size: 12px; color: #6B7280; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Your Digital Pattern Delivery</p>
-        </div>
-
-        <p style="font-size: 16px; color: #5C4033; font-weight: bold; margin-bottom: 8px;">Hi there,</p>
-        <p style="font-size: 14px; line-height: 1.5; color: #5C4033; margin-top: 0;">
-          Thank you for your purchase from <strong>Yarn Craft Co</strong>! Your order has been processed successfully. Below are the download links for your purchased crochet patterns.
-        </p>
-
-        <div style="background-color: #FBF7F0; border: 1px solid #EEDDCC; border-radius: 16px; padding: 16px; margin: 20px 0; font-size: 13px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #5C4033;">
-            <span><strong>Order ID:</strong></span>
-            <span style="font-family: monospace;">${orderId}</span>
+      <div style="background-color: #F8F6F2; padding: 40px 15px; font-family: sans-serif;">
+        <div style="background-color: #FFFFFF; max-width: 600px; margin: 0 auto; border: 1px solid #EEDDCC; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(92, 64, 51, 0.03);">
+          
+          <!-- Colored Top Border -->
+          <div style="height: 6px; background-color: #A855F7;"></div>
+          
+          <!-- Header -->
+          <div style="padding: 32px 32px 16px 32px; text-align: center;">
+            <h1 style="color: #5C4033; font-family: Georgia, serif; margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px;">
+              Yarn<span style="color: #A855F7;">Craft Co</span>
+            </h1>
+            <div style="height: 1px; background-color: #F1ECE6; margin: 16px auto 0 auto; width: 60px;"></div>
+            <p style="margin: 12px 0 0 0; font-size: 11px; color: #8A7366; text-transform: uppercase; font-weight: bold; letter-spacing: 1.2px;">Order Delivery Confirmation</p>
           </div>
-          <div style="display: flex; justify-content: space-between; color: #5C4033;">
-            <span><strong>Total Amount:</strong></span>
-            <span style="color: #A855F7; font-weight: bold;">$${total.toFixed(2)}</span>
+
+          <!-- Body -->
+          <div style="padding: 0 32px 32px 32px; font-family: sans-serif;">
+            <p style="font-size: 15px; color: #5C4033; font-weight: bold; margin-bottom: 8px;">Hi Maker,</p>
+            <p style="font-size: 14px; line-height: 1.5; color: #5C4033; margin-top: 0;">
+              Thank you for supporting independent crochet design! Your payment has been authorized and your PDF patterns are ready for immediate download below.
+            </p>
+
+            <!-- Order Summary Card -->
+            <div style="background-color: #FBF7F0; border-radius: 12px; padding: 18px; margin: 24px 0; border: 1px solid #EEDDCC;">
+              <table style="width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 12px; color: #5C4033;">
+                <tr>
+                  <td style="padding: 4px 0; color: #8A7366; font-weight: bold; text-transform: uppercase; font-size: 9px; letter-spacing: 0.8px;">Order Reference</td>
+                  <td style="padding: 4px 0; text-align: right; font-family: monospace; font-weight: bold; font-size: 13px; color: #1F2937;">${orderId}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #8A7366; font-weight: bold; text-transform: uppercase; font-size: 9px; letter-spacing: 0.8px;">Amount Charged</td>
+                  <td style="padding: 4px 0; text-align: right; color: #A855F7; font-weight: 800; font-size: 14px;">$${total.toFixed(2)}</td>
+                </tr>
+              </table>
+            </div>
+
+            ${profileHtml}
+
+            <!-- Items Table -->
+            <h3 style="color: #5C4033; font-family: Georgia, serif; font-size: 16px; font-weight: bold; border-bottom: 2px solid #EEDDCC; padding-bottom: 8px; margin-top: 32px; margin-bottom: 8px;">Your PDF Downloads</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+              <thead>
+                <tr style="text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #8A7366;">
+                  <th style="padding: 8px 8px 8px 0; font-weight: bold;">Pattern Details</th>
+                  <th style="padding: 8px; text-align: right; font-weight: bold; width: 60px;">Price</th>
+                  <th style="padding: 8px 0 8px 8px; text-align: right; font-weight: bold; width: 100px;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <!-- Promo Banner -->
+            <div style="background-color: #FAF5FF; border: 2px dashed #C084FC; border-radius: 16px; padding: 24px; margin: 32px 0; text-align: center; color: #5C4033;">
+              <span style="font-size: 20px; display: block; margin-bottom: 8px;">🎁</span>
+              <h3 style="color: #A855F7; margin: 0 0 8px 0; font-family: Georgia, serif; font-size: 16px; font-weight: bold;">Cozy Gift: 20% OFF Your Next Project</h3>
+              <p style="margin: 0 0 16px 0; font-size: 12px; color: #7F7F8C; line-height: 1.5;">To help keep your crochet hook busy, enjoy 20% off your next digital pattern order. Simply enter this coupon at checkout:</p>
+              <div style="display: inline-block; background-color: #FFFFFF; padding: 10px 24px; border: 1px solid #C084FC; border-radius: 8px; font-family: monospace; font-size: 16px; font-weight: bold; color: #A855F7; letter-spacing: 1.5px; box-shadow: 0 2px 4px rgba(168, 85, 247, 0.04);">
+                LOVEDYARN20
+              </div>
+              <p style="margin: 8px 0 0 0; font-size: 10px; color: #9CA3AF;">Enter this code on the secure Polar checkout screen to claim your savings.</p>
+            </div>
+
+            <!-- Security Footer -->
+            <div style="background-color: #F9F9FA; border: 1px solid #E6E6EB; border-radius: 12px; padding: 16px; font-family: sans-serif; font-size: 11px; color: #7F7F8C; line-height: 1.5; margin-top: 32px;">
+              <strong>Security & Support:</strong> These download links are intended only for the purchaser. Please do not forward this email or share these links. Files are standard PDF document format. If you need any assistance with a pattern, simply reply to this email or reach us at <strong>support@yarncraftco.com</strong>.
+            </div>
+
+            <!-- Footer -->
+            <div style="text-align: center; border-top: 1px solid #F1ECE6; padding-top: 24px; margin-top: 40px; font-size: 11px; color: #A19085; line-height: 1.6;">
+              <p style="margin: 0 0 4px 0;">© ${new Date().getFullYear()} Yarn Craft Co. All rights reserved.</p>
+              <p style="margin: 0;">You received this receipt because you completed a digital purchase at Yarn Craft Co.</p>
+            </div>
+            
           </div>
-        </div>
-
-        ${profileHtml}
-
-        <h3 style="color: #5C4033; border-bottom: 1px solid #EEDDCC; padding-bottom: 8px; margin-top: 24px;">Purchased Patterns</h3>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-          <thead>
-            <tr style="border-bottom: 2px solid #EEDDCC; text-align: left; font-size: 11px; text-transform: uppercase; color: #6B7280;">
-              <th style="padding: 8px;">Pattern Name</th>
-              <th style="padding: 8px; text-align: right;">Price</th>
-              <th style="padding: 8px; text-align: right;">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${itemsHtml}
-          </tbody>
-        </table>
-
-        <div style="background-color: #FFFDF9; border: 2px dashed #A855F7; border-radius: 16px; padding: 16px; margin: 24px 0 16px 0; text-align: center; color: #5C4033; line-height: 1.5;">
-          <h3 style="color: #A855F7; margin-top: 0; margin-bottom: 6px; font-family: serif; font-size: 16px;">🧶 Special Gift: 20% OFF Your Next Pattern!</h3>
-          <p style="margin: 4px 0 10px 0; font-size: 12px; color: #6B7280;">We want to support your crochet journey! Use this exclusive discount code during checkout on your next purchase:</p>
-          <div style="display: inline-block; background-color: #FAF5FF; padding: 8px 16px; border: 1px solid #A855F7; border-radius: 8px; font-family: monospace; font-size: 16px; font-weight: bold; color: #A855F7; letter-spacing: 1.5px; margin-bottom: 8px;">
-            LOVEDYARN20
-          </div>
-          <p style="margin: 4px 0 0 0; font-size: 11px; color: #9CA3AF;">Enter this code on the Polar checkout screen to apply your discount.</p>
-        </div>
-
-        <div style="background-color: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.1); border-radius: 12px; padding: 12px; font-size: 11px; color: #6B7280; line-height: 1.4; margin-top: 24px;">
-          <strong>Security Note:</strong> These download links are intended only for the purchaser. Do not forward this email or share these links with others. Files are in standard PDF format. If you need any help with a stitch, contact us at <strong>support@yarncraftco.com</strong>.
-        </div>
-
-        <div style="text-align: center; border-top: 1px solid #EEDDCC; padding-top: 16px; margin-top: 30px; font-size: 11px; color: #9CA3AF;">
-          <p>© ${new Date().getFullYear()} Yarn Craft Co. All rights reserved.</p>
-          <p>You received this email because you made a digital purchase from Yarn Craft Co.</p>
         </div>
       </div>
     `;
@@ -200,35 +222,53 @@ export async function sendMarketingEmail(args: SendMarketingEmailArgs) {
     const siteUrl = args.siteUrl || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
     const htmlBody = `
-      <div style="background-color: #FFFDF9; padding: 24px; font-family: sans-serif; color: #1F2937; max-width: 600px; margin: 0 auto; border: 1px solid #EEDDCC; border-radius: 24px;">
-        <div style="text-align: center; border-bottom: 2px solid #A855F7; padding-bottom: 16px; margin-bottom: 20px;">
-          <h1 style="color: #5C4033; font-family: serif; margin: 0; font-size: 28px;">Yarn<span style="color: #A855F7;">Craft Co</span></h1>
-          <p style="margin: 4px 0 0 0; font-size: 12px; color: #6B7280; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Exclusive Creator Offer</p>
-        </div>
-
-        <p style="font-size: 15px; color: #5C4033; font-weight: bold; margin-bottom: 12px;">Hi Maker,</p>
-        <p style="font-size: 14px; line-height: 1.6; color: #5C4033; margin-top: 0; white-space: pre-line;">
-          ${message}
-        </p>
-
-        <div style="background-color: #FFFDF9; border: 2px dashed #A855F7; border-radius: 16px; padding: 20px; margin: 24px 0; text-align: center; color: #5C4033; line-height: 1.5;">
-          <h3 style="color: #A855F7; margin-top: 0; margin-bottom: 6px; font-family: serif; font-size: 18px;">🎁 Claim Your ${discountPercent}% OFF Code</h3>
-          <p style="margin: 4px 0 12px 0; font-size: 12px; color: #6B7280;">Copy this discount code and apply it during checkout to save:</p>
-          <div style="display: inline-block; background-color: #white; padding: 10px 20px; border: 1.5px solid #A855F7; border-radius: 10px; font-family: monospace; font-size: 18px; font-weight: bold; color: #A855F7; letter-spacing: 2px; shadow: sm;">
-            ${promoCode.toUpperCase()}
+      <div style="background-color: #F8F6F2; padding: 40px 15px; font-family: sans-serif;">
+        <div style="background-color: #FFFFFF; max-width: 600px; margin: 0 auto; border: 1px solid #EEDDCC; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(92, 64, 51, 0.03);">
+          
+          <!-- Colored Top Border -->
+          <div style="height: 6px; background-color: #A855F7;"></div>
+          
+          <!-- Header -->
+          <div style="padding: 32px 32px 16px 32px; text-align: center;">
+            <h1 style="color: #5C4033; font-family: Georgia, serif; margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px;">
+              Yarn<span style="color: #A855F7;">Craft Co</span>
+            </h1>
+            <div style="height: 1px; background-color: #F1ECE6; margin: 16px auto 0 auto; width: 60px;"></div>
+            <p style="margin: 12px 0 0 0; font-size: 11px; color: #8A7366; text-transform: uppercase; font-weight: bold; letter-spacing: 1.2px;">Exclusive Offer for Makers</p>
           </div>
-          <p style="margin: 8px 0 0 0; font-size: 11px; color: #9CA3AF;">Visit our shop to browse our patterns library.</p>
-        </div>
 
-        <div style="text-align: center; margin-top: 24px;">
-          <a href="${siteUrl}" style="background-color: #A855F7; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: bold; padding: 10px 24px; border-radius: 10px; display: inline-block;">
-            Browse Patterns Catalog
-          </a>
-        </div>
+          <!-- Body -->
+          <div style="padding: 0 32px 32px 32px; font-family: sans-serif;">
+            <p style="font-size: 15px; color: #5C4033; font-weight: bold; margin-bottom: 8px;">Hi Maker,</p>
+            <p style="font-size: 14px; line-height: 1.6; color: #5C4033; margin-top: 0; white-space: pre-line;">
+              ${message}
+            </p>
 
-        <div style="text-align: center; border-top: 1px solid #EEDDCC; padding-top: 16px; margin-top: 30px; font-size: 11px; color: #9CA3AF;">
-          <p>© ${new Date().getFullYear()} Yarn Craft Co. All rights reserved.</p>
-          <p>You received this email because you are a registered maker at Yarn Craft Co.</p>
+            <!-- Promo Banner -->
+            <div style="background-color: #FAF5FF; border: 2px dashed #C084FC; border-radius: 16px; padding: 24px; margin: 32px 0; text-align: center; color: #5C4033;">
+              <span style="font-size: 20px; display: block; margin-bottom: 8px;">🎁</span>
+              <h3 style="color: #A855F7; margin: 0 0 8px 0; font-family: Georgia, serif; font-size: 16px; font-weight: bold;">Claim Your ${discountPercent}% OFF Coupon</h3>
+              <p style="margin: 0 0 16px 0; font-size: 12px; color: #7F7F8C;">Copy this discount code and apply it during checkout to claim your savings:</p>
+              <div style="display: inline-block; background-color: #FFFFFF; padding: 10px 24px; border: 1px solid #C084FC; border-radius: 8px; font-family: monospace; font-size: 18px; font-weight: bold; color: #A855F7; letter-spacing: 2px; box-shadow: 0 2px 4px rgba(168, 85, 247, 0.04);">
+                ${promoCode.toUpperCase()}
+              </div>
+              <p style="margin: 8px 0 0 0; font-size: 11px; color: #9CA3AF;">Visit our shop to browse our patterns library.</p>
+            </div>
+
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 32px 0 16px 0;">
+              <a href="${siteUrl}" style="background-color: #A855F7; color: #ffffff; text-decoration: none; font-family: sans-serif; font-size: 13px; font-weight: bold; padding: 12px 28px; border-radius: 9999px; display: inline-block; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.15);">
+                Browse Patterns Catalog
+              </a>
+            </div>
+
+            <!-- Footer -->
+            <div style="text-align: center; border-top: 1px solid #F1ECE6; padding-top: 24px; margin-top: 40px; font-size: 11px; color: #A19085; line-height: 1.6;">
+              <p style="margin: 0 0 4px 0;">© ${new Date().getFullYear()} Yarn Craft Co. All rights reserved.</p>
+              <p style="margin: 0;">You received this email because you are a registered maker at Yarn Craft Co.</p>
+            </div>
+            
+          </div>
         </div>
       </div>
     `;
