@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { getAttachmentDownloadUrl } from './config';
 
 interface SendPatternEmailArgs {
   toEmail: string;
@@ -84,7 +85,7 @@ export async function sendPatternEmail(args: SendPatternEmailArgs) {
           $${item.price.toFixed(2)}
         </td>
         <td style="padding: 16px 8px; text-align: right;">
-          <a href="${siteUrl}${item.pdfUrl}" download style="background-color: #A855F7; color: #ffffff; text-decoration: none; font-family: sans-serif; font-size: 11px; font-weight: bold; padding: 8px 16px; border-radius: 9999px; display: inline-block;">
+          <a href="${getAttachmentDownloadUrl(item.pdfUrl, item.title, siteUrl)}" download style="background-color: #A855F7; color: #ffffff; text-decoration: none; font-family: sans-serif; font-size: 11px; font-weight: bold; padding: 8px 16px; border-radius: 9999px; display: inline-block;">
             Download
           </a>
         </td>

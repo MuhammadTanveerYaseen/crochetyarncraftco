@@ -79,3 +79,51 @@ export const SITE_URL =
 export const SUPPORT_EMAIL = 'support@yarncraftco.com';
 
 export const BRAND_NAME = 'Yarn Craft Co';
+
+/**
+ * Helper to construct forced attachment download URL for Cloudinary or local files.
+ * Handles both absolute and relative URLs.
+ */
+export function getAttachmentDownloadUrl(url: string, title?: string, fallbackSiteUrl?: string): string {
+  if (!url) return '';
+  
+  let finalUrl = url;
+  
+  // If it's a relative path and we need to make it absolute (for email, etc.)
+  if (fallbackSiteUrl && !url.startsWith('http://') && !url.startsWith('https://')) {
+    const cleanSiteUrl = fallbackSiteUrl.replace(/\/$/, '');
+    const cleanUrlPath = url.replace(/^\//, '');
+    finalUrl = `${cleanSiteUrl}/${cleanUrlPath}`;
+  }
+
+  // If it's a Cloudinary URL, route it through our secure download proxy to force download and set custom filename
+  if (finalUrl.includes('res.cloudinary.com')) {
+    const sanitizedTitle = title ? title.replace(/[^a-zA-Z0-9]/g, '_') : 'pattern';
+    
+    // Extract file extension from the URL (e.g. .pdf) to preserve format
+    const extMatch = finalUrl.match(/\.([a-zA-Z0-9]+)(?:[?#]|$)/);
+    const ext = extMatch ? extMatch[0] : '.pdf'; // Default to .pdf if not detected
+    
+    let filenameWithExt = sanitizedTitle;
+    if (!sanitizedTitle.toLowerCase().endsWith(ext.toLowerCase())) {
+      filenameWithExt = `${sanitizedTitle}${ext}`;
+    }
+    
+    // Clean any previously injected fl_attachment from the URL to fetch the clean original asset
+    const cleanUrl = finalUrl.replace(/\/fl_attachment[^/]*\//, '/');
+
+    // Build the proxy download URL path
+    const downloadPath = `/api/download?url=${encodeURIComponent(cleanUrl)}&filename=${encodeURIComponent(filenameWithExt)}`;
+    
+    // If we need an absolute URL (like for emails), prepend the fallbackSiteUrl
+    if (fallbackSiteUrl) {
+      const cleanSiteUrl = fallbackSiteUrl.replace(/\/$/, '');
+      return `${cleanSiteUrl}${downloadPath}`;
+    }
+    
+    return downloadPath;
+  }
+  
+  return finalUrl;
+}
+

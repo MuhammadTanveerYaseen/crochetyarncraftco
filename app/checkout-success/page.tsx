@@ -8,6 +8,8 @@ import { useCart } from '@/context/CartContext';
 import { graphqlRequest } from '@/lib/graphqlClient';
 import ProductCard from '@/components/ProductCard';
 
+import { getAttachmentDownloadUrl } from '@/lib/config';
+
 function SuccessContent() {
   const { clearCart } = useCart();
 
@@ -26,6 +28,10 @@ function SuccessContent() {
     pdfUrl: pdfs[index] || '/uploads/mock-pattern.pdf'
   }));
 
+  const getDownloadUrl = (url: string, title?: string) => {
+    return getAttachmentDownloadUrl(url, title);
+  };
+
   const [recommendations, setRecommendations] = useState<any[]>([]);
 
   useEffect(() => {
@@ -42,7 +48,8 @@ function SuccessContent() {
         order_id: orderId
       });
     }
-  }, [clearCart, total, orderId, titlesString]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     async function loadRecommendations() {
@@ -141,6 +148,8 @@ function SuccessContent() {
                 <a 
                   href="/uploads/mock-giraffe-pattern.pdf"
                   download
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="btn-primary py-2 px-4 text-xs flex items-center gap-1.5"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -160,8 +169,10 @@ function SuccessContent() {
                   
                   {/* Download Link */}
                   <a 
-                    href={item.pdfUrl}
+                    href={getDownloadUrl(item.pdfUrl, item.title)}
                     download={item.title.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     onClick={(e) => {
                       // Let's print details to server logs for convenience
                       console.log(`Downloading: ${item.title} from path ${item.pdfUrl}`);

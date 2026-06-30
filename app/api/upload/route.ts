@@ -31,11 +31,10 @@ const uploadToCloudinary = (buffer: Buffer, filename: string): Promise<any> => {
       reject(new Error('Cloudinary upload timed out (5s limit reached)'));
     }, 5000);
 
-    // Determine folder and resource type
-    const isPdf = filename.toLowerCase().endsWith('.pdf');
+    // Use auto to let Cloudinary classify PDFs as document assets to serve correct Content-Type headers
     const options = {
       folder: 'crafting_pattern_store',
-      resource_type: isPdf ? ('raw' as const) : ('auto' as const),
+      resource_type: 'auto' as const,
       public_id: filename.substring(0, filename.lastIndexOf('.')) || filename
     };
 

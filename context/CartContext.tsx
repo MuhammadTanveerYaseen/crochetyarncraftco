@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export interface CartItem {
   _id: string;
@@ -60,7 +60,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('crafting_pattern_cart', JSON.stringify(newCart));
   };
 
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type }]);
 
@@ -68,11 +72,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTimeout(() => {
       removeToast(id);
     }, 3500);
-  };
-
-  const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
+  }, [removeToast]);
 
   const addToCart = (item: CartItem) => {
     const exists = cart.find((i) => i._id === item._id);

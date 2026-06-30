@@ -52,6 +52,15 @@ export class RateLimiter {
   }
 
   check(identifier: string): RateLimitResult {
+    // Disable rate limiting in local development mode to avoid 429 blocks during testing
+    if (process.env.NODE_ENV !== 'production') {
+      return {
+        success: true,
+        remaining: 9999,
+        resetAt: Date.now() + this.windowMs,
+        retryAfterSeconds: 0,
+      };
+    }
     const now = Date.now();
     const record = this.store.get(identifier);
 

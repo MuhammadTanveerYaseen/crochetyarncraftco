@@ -7,6 +7,7 @@ import { useCart } from '@/context/CartContext';
 import { graphqlRequest } from '@/lib/graphqlClient';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getAttachmentDownloadUrl } from '@/lib/config';
 
 interface OrderItem {
   productId: string;
@@ -96,7 +97,9 @@ export default function ProfilePage() {
           }
         `;
         const ordersData = await graphqlRequest(ordersQuery);
-        const userOrders: Order[] = ordersData?.myOrders || [];
+        const userOrders: Order[] = (ordersData?.myOrders || []).filter((order: any) => {
+          return !order._id.includes('mock') && !order._id.includes('demo');
+        });
         setOrders(userOrders);
 
         // 3. Fetch product catalog to map PDF download links and thumbnails
@@ -127,11 +130,18 @@ export default function ProfilePage() {
               // Find matching details in product catalog
               const detail = productList.find((p) => p._id === item.productId || p.title === item.title);
               
+              const pdfUrl = detail?.pdfUrl || '/uploads/mock-pattern.pdf';
+              
+              // Skip mock patterns from rendering in user purchased patterns list
+              if (pdfUrl.includes('mock-pattern.pdf') || pdfUrl.includes('mock-giraffe-pattern.pdf')) {
+                return;
+              }
+              
               resolvedList.push({
                 productId: item.productId,
                 title: item.title,
                 price: item.price,
-                pdfUrl: detail?.pdfUrl || '/uploads/mock-pattern.pdf',
+                pdfUrl: pdfUrl,
                 image: detail?.images?.[0] || 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&auto=format&fit=crop&q=80',
                 category: detail?.category || 'Crochet Pattern',
                 difficulty: detail?.difficulty || 'Intermediate'
@@ -140,39 +150,7 @@ export default function ProfilePage() {
           });
         });
 
-        // Offline resiliency backup: if authenticated but no orders, pre-populate a mock order for demo flow
-        if (userOrders.length === 0) {
-          // Check if we have standard mock products
-          const sampleProd = productList[0] || {
-            _id: 'mock-1',
-            title: 'Amigurumi Crochet Giraffe Plushie',
-            pdfUrl: '/uploads/mock-giraffe-pattern.pdf',
-            images: ['https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&auto=format&fit=crop&q=80'],
-            category: 'amigurumi',
-            difficulty: 'Intermediate'
-          };
-          
-          resolvedList.push({
-            productId: sampleProd._id,
-            title: sampleProd.title,
-            price: 4.99,
-            pdfUrl: sampleProd.pdfUrl || '/uploads/mock-giraffe-pattern.pdf',
-            image: sampleProd.images?.[0] || 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&auto=format&fit=crop&q=80',
-            category: sampleProd.category || 'amigurumi',
-            difficulty: sampleProd.difficulty || 'Intermediate'
-          });
 
-          setOrders([
-            {
-              _id: `demo-order-${Date.now()}`,
-              customerEmail: currentUser.email,
-              items: [{ productId: sampleProd._id, title: sampleProd.title, price: 4.99 }],
-              totalAmount: 4.99,
-              status: 'completed',
-              createdAt: new Date().toISOString()
-            }
-          ]);
-        }
 
         setPatterns(resolvedList);
       } catch (err) {
@@ -184,7 +162,8 @@ export default function ProfilePage() {
     }
 
     loadProfileData();
-  }, [router, showToast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -358,8 +337,8 @@ export default function ProfilePage() {
                     {/* Download CTA block */}
                     <div className="p-5 pt-0">
                       <a
-                        href={pattern.pdfUrl}
-                        download
+                        href={getAttachmentDownloadUrl(pattern.pdfUrl, pattern.title)}
+                        download={pattern.title.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'}
                         className="w-full bg-[#A855F7] hover:bg-[#A855F7]/90 text-white font-bold text-xs py-3 rounded-2xl flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all"
                       >
                         <Download className="w-4 h-4" />
