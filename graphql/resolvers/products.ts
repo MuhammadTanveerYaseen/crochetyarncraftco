@@ -4,7 +4,7 @@
  */
 
 import Product from '@/models/Product';
-import { isDbConnected, inMemoryProducts, MOCK_PRODUCTS } from './shared';
+import { isDbConnected, inMemoryProducts, MOCK_PRODUCTS, saveInMemoryProducts } from './shared';
 import { validateProductInput } from '@/lib/validators';
 import { PAGE_SIZES } from '@/lib/config';
 import { assertAdmin } from './shared';
@@ -50,19 +50,6 @@ export async function products(args: ProductFilters) {
     }
 
     let dbList = await dbQuery;
-
-    // Auto-seed empty DB with mock data for first-run experience
-    if (
-      dbList.length === 0 &&
-      !search &&
-      (!category || category === 'all') &&
-      (!difficulty || difficulty === 'all') &&
-      !queryOffset
-    ) {
-      const cleanMocks = MOCK_PRODUCTS.map(({ _id, ...rest }) => rest);
-      await Product.insertMany(cleanMocks);
-      dbList = await Product.find({}).sort(sortOption).skip(0).limit(queryLimit);
-    }
 
     return dbList;
   }
@@ -127,6 +114,7 @@ export async function createProduct(args: CreateProductInput, ctx: GraphQLContex
 
   const newProd = { _id: `mock-${Date.now()}`, ...cleanArgs };
   inMemoryProducts.unshift(newProd as any);
+  saveInMemoryProducts(inMemoryProducts);
   return newProd;
 }
 
@@ -157,6 +145,7 @@ export async function updateProduct(
   if (rest.salePrice === null || rest.salePrice === undefined) {
     delete (inMemoryProducts[idx] as any).salePrice;
   }
+  saveInMemoryProducts(inMemoryProducts);
   return inMemoryProducts[idx];
 }
 
@@ -171,7 +160,10 @@ export async function deleteProduct({ id }: { id: string }, ctx: GraphQLContext)
 
   const before = inMemoryProducts.length;
   const idx = inMemoryProducts.findIndex(p => p._id === id);
-  if (idx !== -1) inMemoryProducts.splice(idx, 1);
+  if (idx !== -1) {
+    inMemoryProducts.splice(idx, 1);
+    saveInMemoryProducts(inMemoryProducts);
+  }
   return inMemoryProducts.length < before;
 }
 

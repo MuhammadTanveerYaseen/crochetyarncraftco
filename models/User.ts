@@ -22,8 +22,7 @@ const UserSchema = new Schema<IUser>({
   createdAt: { type: Date, default: Date.now }
 });
 
-// Explicit indexes (email uniqueness enforced at schema level too)
-UserSchema.index({ email: 1 }, { unique: true }); // Fast login lookup
+// Explicit indexes
 UserSchema.index({ createdAt: -1 });               // Admin user listing
 
 const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
