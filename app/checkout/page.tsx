@@ -95,7 +95,7 @@ export default function CheckoutPage() {
       }
 
       // Redirect to Polar checkout page
-      router.push(resData.url);
+      window.location.href = resData.url;
     } catch (err: any) {
       console.error('Polar checkout initialization error:', err);
       setError(err.message || 'Payment system encountered an error');

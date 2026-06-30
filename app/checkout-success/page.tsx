@@ -1,18 +1,15 @@
 'use client';
 
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, Download, FileText, ArrowRight, Mail, User } from 'lucide-react';
+import { CheckCircle2, Download, FileText, ArrowRight, Mail, User, Sparkles } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { graphqlRequest } from '@/lib/graphqlClient';
+import ProductCard from '@/components/ProductCard';
 
 function SuccessContent() {
   const { clearCart } = useCart();
-
-  useEffect(() => {
-    // Clear shopping cart on successful checkout completion
-    clearCart();
-  }, [clearCart]);
 
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || 'your email';
@@ -26,6 +23,49 @@ function SuccessContent() {
     title,
     pdfUrl: pdfs[index] || '/uploads/mock-pattern.pdf'
   }));
+
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Clear shopping cart on successful checkout completion
+    clearCart();
+  }, [clearCart]);
+
+  useEffect(() => {
+    async function loadRecommendations() {
+      const query = `
+        query GetRecommendations {
+          products(limit: 6) {
+            items {
+              _id
+              title
+              description
+              price
+              salePrice
+              images
+              category
+              difficulty
+              pdfUrl
+              featured
+            }
+          }
+        }
+      `;
+      try {
+        const data = await graphqlRequest(query);
+        if (data?.products?.items) {
+          // Filter out already purchased items in this order
+          const filtered = data.products.items.filter((item: any) => {
+            return !pdfs.includes(item.pdfUrl);
+          });
+          setRecommendations(filtered.slice(0, 3));
+        }
+      } catch (err) {
+        console.warn("Failed to load recommendations:", err);
+      }
+    }
+    loadRecommendations();
+  }, [pdfs]);
 
 
   return (
@@ -141,6 +181,27 @@ function SuccessContent() {
             <span>Back to Homepage</span>
           </Link>
         </div>
+
+        {/* Recommended Products Upsell */}
+        {recommendations.length > 0 && (
+          <div className="border-t border-[#EEDDCC] pt-12 space-y-6 max-w-4xl mx-auto text-left animate-fadeIn">
+            <div className="space-y-1 text-center sm:text-left">
+              <h3 className="font-serif font-black text-xl text-[#5C4033] flex items-center justify-center sm:justify-start gap-2">
+                <Sparkles className="w-5 h-5 text-[#A855F7]" />
+                <span>Keep Stitching! Recommended Patterns for You</span>
+              </h3>
+              <p className="text-xs text-gray-500 font-medium">Add more premium patterns to your collection and start your next project today.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {recommendations.map((prod) => (
+                <div key={prod._id} className="h-full">
+                  <ProductCard product={prod} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
