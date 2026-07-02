@@ -26,10 +26,10 @@ if (isCloudinaryConfigured) {
 // Upload buffer streaming helper for Cloudinary
 const uploadToCloudinary = (buffer: Buffer, filename: string): Promise<any> => {
   return new Promise((resolve, reject) => {
-    // Set a 5-second timeout to prevent hanging the request if Cloudinary connection fails
+    // Set a 3-minute timeout to allow uploading larger files (e.g. detailed PDF patterns)
     const timeout = setTimeout(() => {
-      reject(new Error('Cloudinary upload timed out (5s limit reached)'));
-    }, 5000);
+      reject(new Error('Cloudinary upload timed out (3-minute limit reached)'));
+    }, 180000);
 
     // Use auto to let Cloudinary classify PDFs as document assets to serve correct Content-Type headers
     const options = {
@@ -76,45 +76,23 @@ export async function POST(request: Request) {
     const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const uniqueFilename = `${timestamp}-${sanitizedFilename}`;
 
-    // 1. Cloudinary upload branch
-    if (isCloudinaryConfigured) {
-      try {
-        console.log(`Streaming ${file.name} to Cloudinary CDN...`);
-        const result = await uploadToCloudinary(buffer, uniqueFilename);
-        console.log(`Cloudinary upload success! URL: ${result.secure_url}`);
-        return NextResponse.json({ 
-          success: true, 
-          url: result.secure_url,
-          filename: file.name,
-          provider: 'cloudinary'
-        });
-      } catch (cloudinaryErr: any) {
-        console.error('Cloudinary API upload failed. Falling back to local disk storage:', cloudinaryErr);
-        // Fall through to local storage if Cloudinary fails during runtime
-      }
+    // Cloudinary upload only
+    if (!isCloudinaryConfigured) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Cloudinary credentials are not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your env settings.' 
+      }, { status: 500 });
     }
 
-    // 2. Local storage fallback branch
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
+    console.log(`Streaming ${file.name} to Cloudinary CDN...`);
+    const result = await uploadToCloudinary(buffer, uniqueFilename);
+    console.log(`Cloudinary upload success! URL: ${result.secure_url}`);
     
-    // Ensure upload directory exists
-    try {
-      await mkdir(uploadDir, { recursive: true });
-    } catch (err) {
-      // Directory already exists, ignore
-    }
-
-    const filePath = join(uploadDir, uniqueFilename);
-    await writeFile(filePath, buffer);
-    console.log(`Uploaded file saved locally to: ${filePath}`);
-
-    const localUrl = `/uploads/${uniqueFilename}`;
-
     return NextResponse.json({ 
       success: true, 
-      url: localUrl,
+      url: result.secure_url,
       filename: file.name,
-      provider: 'local'
+      provider: 'cloudinary'
     });
   } catch (error: any) {
     console.error('File upload route error:', error);
