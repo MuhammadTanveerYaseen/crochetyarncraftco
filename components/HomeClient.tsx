@@ -314,22 +314,64 @@ function HomeContent() {
                   </div>
                 );
               })()
+            ) : products.length > 0 ? (
+              (() => {
+                const fallbackProduct = products[0];
+                const hasSale = fallbackProduct.salePrice && fallbackProduct.salePrice < fallbackProduct.price;
+                return (
+                  <div className="w-full max-w-sm bg-white border border-gray-200 rounded-none p-5 shadow-lg relative flex flex-col gap-4 animate-scaleUp overflow-hidden group">
+                    <div className="relative w-full aspect-square overflow-hidden border border-gray-200 bg-gray-50">
+                      <Link href={`/products/${fallbackProduct._id}`} className="block w-full h-full relative">
+                        <Image 
+                          src={fallbackProduct.images?.[0] || 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80'} 
+                          alt={fallbackProduct.title}
+                          fill
+                          className="object-cover hover:scale-105 transition-transform duration-500"
+                          unoptimized
+                        />
+                      </Link>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{fallbackProduct.category}</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
+                        <span className="text-[9px] text-[#A855F7] font-extrabold uppercase bg-[#A855F7]/10 px-2.5 py-0.5 rounded-full">{fallbackProduct.difficulty}</span>
+                      </div>
+
+                      <Link href={`/products/${fallbackProduct._id}`} className="hover:underline block">
+                        <h3 className="font-sans font-black text-gray-900 text-lg line-clamp-1">
+                          {fallbackProduct.title}
+                        </h3>
+                      </Link>
+
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-xl font-black text-[#A855F7]">
+                          ${(fallbackProduct.salePrice ?? fallbackProduct.price).toFixed(2)}
+                        </span>
+                        {hasSale && (
+                          <span className="text-xs text-gray-400 line-through">
+                            ${fallbackProduct.price.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <Link 
+                      href={`/products/${fallbackProduct._id}`}
+                      className="btn-primary text-center py-3 text-xs font-black uppercase tracking-wider rounded-none shadow-md cursor-pointer block hover:bg-[#9333EA] transition-all"
+                    >
+                      View Pattern
+                    </Link>
+                  </div>
+                );
+              })()
             ) : (
-              <div className="w-full max-w-sm bg-white border border-[#EEDDCC] rounded-3xl p-5 shadow-lg relative flex flex-col gap-4 overflow-hidden">
-                <div className="relative w-full aspect-square rounded-2xl overflow-hidden border border-[#EEDDCC]/50 bg-[#FBF7F0]">
-                  <Image 
-                    src="https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80" 
-                    alt="Yarn Craft Co Crochet Hooks"
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                </div>
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase">Featured Spotlight</span>
-                  <h3 className="font-serif font-black text-[#5C4033] text-lg">Claim Your Free PDF Gift</h3>
-                  <p className="text-xs text-gray-500">Register or sign up as a maker to download our starter crochet patterns list free.</p>
-                </div>
+              <div className="w-full max-w-sm bg-white border border-gray-200 rounded-none p-5 shadow-lg relative flex flex-col gap-4 animate-pulse">
+                <div className="aspect-square bg-gray-100 rounded-none w-full animate-pulse" />
+                <div className="h-4 bg-gray-100 rounded-md w-1/3" />
+                <div className="h-6 bg-gray-100 rounded-md w-3/4" />
+                <div className="h-10 bg-gray-100 rounded-none w-full" />
               </div>
             )}
           </div>
