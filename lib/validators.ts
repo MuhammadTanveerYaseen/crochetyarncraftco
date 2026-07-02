@@ -86,8 +86,6 @@ export function validateProductInput(input: CreateProductInput): void {
 
   assert(typeof input.description === 'string' && input.description.trim().length >= 20,
     'Description must be at least 20 characters', 'description');
-  assert(input.description.trim().length <= 3000,
-    'Description must not exceed 3000 characters', 'description');
 
   const price = Number(input.price);
   assert(!isNaN(price) && price >= 0.5, 'Price must be at least $0.50', 'price');
