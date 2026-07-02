@@ -30,7 +30,7 @@
 
   /* Tailwind font-sans and font-serif use Next.js injected CSS variables */
   --font-sans: var(--font-poppins, system-ui, sans-serif);
-  --font-serif: var(--font-fraunces, Georgia, serif);
+  --font-serif: var(--font-poppins, system-ui, sans-serif);
 }
 
 body {
@@ -303,5 +303,7 @@ details[open] summary svg {
   margin: 0 auto;
 }
 
-
-
+/* Force Poppins font globally on all elements using Tailwind font utilities */
+.font-sans, .font-serif, body, h1, h2, h3, h4, h5, h6, p, span, a, button, select, input, textarea {
+  font-family: var(--font-poppins, 'Poppins', system-ui, -apple-system, sans-serif) !important;
+}
