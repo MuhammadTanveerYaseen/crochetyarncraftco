@@ -19,7 +19,7 @@ import type {
 export async function products(args: ProductFilters) {
   const queryLimit = args.limit ? Math.min(Number(args.limit), PAGE_SIZES.MAX_PRODUCTS) : PAGE_SIZES.STOREFRONT;
   const queryOffset = args.offset ? Number(args.offset) : 0;
-  const { category, difficulty, search, sort } = args;
+  const { category, difficulty, search, sort, runAd } = args;
 
   const isConnected = await isDbConnected();
 
@@ -28,6 +28,7 @@ export async function products(args: ProductFilters) {
 
     if (category && category !== 'all') query.category = category;
     if (difficulty && difficulty !== 'all') query.difficulty = difficulty;
+    if (runAd !== undefined) query.runAd = runAd;
 
     if (search) {
       // Use indexed $text search for performance (vs full-scan $regex)
@@ -58,6 +59,7 @@ export async function products(args: ProductFilters) {
   let list = [...inMemoryProducts];
   if (category && category !== 'all') list = list.filter(p => p.category === category);
   if (difficulty && difficulty !== 'all') list = list.filter(p => p.difficulty === difficulty);
+  if (runAd !== undefined) list = list.filter(p => p.runAd === runAd);
   if (search) {
     const term = search.toLowerCase();
     list = list.filter(
@@ -105,6 +107,7 @@ export async function createProduct(args: CreateProductInput, ctx: GraphQLContex
     materials: args.materials ?? [],
     languages: args.languages ?? ['English'],
     featured: !!args.featured,
+    runAd: !!args.runAd,
     createdAt: new Date().toISOString(),
   };
 
@@ -176,4 +179,42 @@ export async function categories() {
   // Fallback for mock mode
   const list = inMemoryProducts.map(p => p.category).filter(Boolean);
   return Array.from(new Set(list));
+}
+
+export async function notifyAdminProductFavorited(
+  { productId, userEmail }: { productId: string; userEmail?: string },
+  ctx: GraphQLContext
+) {
+  const isConnected = await isDbConnected();
+  let productTitle = 'Unknown Crochet Pattern';
+
+  try {
+    if (isConnected) {
+      const prod = await Product.findById(productId).select('title').lean();
+      if (prod && (prod as any).title) productTitle = (prod as any).title;
+    } else {
+      const prod = inMemoryProducts.find(p => p._id === productId);
+      if (prod?.title) productTitle = prod.title;
+    }
+  } catch (err) {
+    console.warn(`Could not resolve title for product ID ${productId}:`, err);
+  }
+
+  let dynamicSiteUrl: string | undefined = undefined;
+  if (ctx?.request) {
+    const host = ctx.request.headers.get('host') || 'localhost:3000';
+    const proto = ctx.request.headers.get('x-forwarded-proto') || 'http';
+    dynamicSiteUrl = `${proto}://${host}`;
+  }
+
+  // Send admin email dispatch in background
+  const { sendAdminFavoriteNotification } = require('@/lib/email');
+  sendAdminFavoriteNotification({
+    userEmail: userEmail || undefined,
+    productTitle,
+    productId,
+    siteUrl: dynamicSiteUrl
+  }).catch((err: any) => console.error('Admin favorite notification email failed to send:', err));
+
+  return true;
 }

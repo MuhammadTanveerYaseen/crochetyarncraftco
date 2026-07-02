@@ -296,3 +296,195 @@ export async function sendMarketingEmail(args: SendMarketingEmailArgs) {
     throw error;
   }
 }
+
+interface SendAdminFavoriteNotificationArgs {
+  userEmail?: string;
+  productTitle: string;
+  productId: string;
+  siteUrl?: string;
+}
+
+export async function sendAdminFavoriteNotification(args: SendAdminFavoriteNotificationArgs) {
+  const { userEmail, productTitle, productId } = args;
+  try {
+    const transporter = await getTransporter();
+    const siteUrl = args.siteUrl || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const adminEmail = 'muhammadtanveer0135@gmail.com';
+    const productLink = `${siteUrl}/products/${productId}`;
+
+    const htmlBody = `
+      <div style="background-color: #F8F6F2; padding: 40px 15px; font-family: sans-serif;">
+        <div style="background-color: #FFFFFF; max-width: 600px; margin: 0 auto; border: 1px solid #EEDDCC; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(92, 64, 51, 0.03);">
+          <div style="height: 6px; background-color: #A855F7;"></div>
+          <div style="padding: 32px 32px 16px 32px; text-align: center;">
+            <h1 style="color: #5C4033; font-family: Georgia, serif; margin: 0; font-size: 24px; font-weight: 900;">
+              Yarn<span style="color: #A855F7;">Craft Co</span>
+            </h1>
+            <div style="height: 1px; background-color: #F1ECE6; margin: 16px auto 0 auto; width: 60px;"></div>
+            <p style="margin: 12px 0 0 0; font-size: 11px; color: #8A7366; text-transform: uppercase; font-weight: bold; letter-spacing: 1.2px;">❤️ Pattern Favorited ❤️</p>
+          </div>
+          <div style="padding: 0 32px 32px 32px; font-family: sans-serif; font-size: 14px; color: #5C4033; line-height: 1.6;">
+            <p>Hi Admin,</p>
+            <p>A maker has just added a pattern to their favorites list! Here are the details:</p>
+            
+            <div style="background-color: #FBF7F0; border-radius: 12px; padding: 18px; margin: 24px 0; border: 1px solid #EEDDCC;">
+              <table style="width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 12px; color: #5C4033;">
+                <tr>
+                  <td style="padding: 6px 0; color: #8A7366; font-weight: bold; text-transform: uppercase; font-size: 9px; letter-spacing: 0.8px;">Pattern Title</td>
+                  <td style="padding: 6px 0; text-align: right; font-weight: bold; font-size: 13px; color: #1F2937;">${productTitle}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #8A7366; font-weight: bold; text-transform: uppercase; font-size: 9px; letter-spacing: 0.8px;">Product ID</td>
+                  <td style="padding: 6px 0; text-align: right; font-family: monospace; font-weight: bold; color: #5C4033;">${productId}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #8A7366; font-weight: bold; text-transform: uppercase; font-size: 9px; letter-spacing: 0.8px;">Favorited By</td>
+                  <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #A855F7;">${userEmail || 'Anonymous Guest'}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="text-align: center; margin: 24px 0 16px 0;">
+              <a href="${productLink}" style="background-color: #A855F7; color: #ffffff; text-decoration: none; font-family: sans-serif; font-size: 13px; font-weight: bold; padding: 12px 28px; border-radius: 9999px; display: inline-block;">
+                View Product Details
+              </a>
+            </div>
+            
+            <div style="text-align: center; border-top: 1px solid #F1ECE6; padding-top: 24px; margin-top: 40px; font-size: 11px; color: #A19085;">
+              <p style="margin: 0;">© ${new Date().getFullYear()} Yarn Craft Co Admin Alerts</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: `"Yarn Craft Co Store" <${process.env.SMTP_USER || 'no-reply@yarncraftco.com'}>`,
+      to: adminEmail,
+      subject: `❤️ Product Favorited: "${productTitle}"`,
+      html: htmlBody
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    if (nodemailer.getTestMessageUrl(info)) {
+      console.log('----------------------------------------------------');
+      console.log('✉ MOCK ADMIN FAVORITE NOTIFICATION DISPATCHED!');
+      console.log(`Preview email in your browser: ${nodemailer.getTestMessageUrl(info)}`);
+      console.log('----------------------------------------------------');
+    }
+    return info;
+  } catch (error) {
+    console.error('Admin favorite notification dispatch error:', error);
+    throw error;
+  }
+}
+
+interface SendAdminSaleNotificationArgs {
+  orderId: string;
+  customerEmail: string;
+  totalAmount: number;
+  items: Array<{
+    title: string;
+    price: number;
+  }>;
+  siteUrl?: string;
+}
+
+export async function sendAdminSaleNotification(args: SendAdminSaleNotificationArgs) {
+  const { orderId, customerEmail, totalAmount, items } = args;
+  try {
+    const transporter = await getTransporter();
+    const siteUrl = args.siteUrl || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const adminEmail = 'muhammadtanveer0135@gmail.com';
+    const adminLink = `${siteUrl}/admin`;
+
+    const itemsHtml = items.map(item => `
+      <tr style="border-bottom: 1px solid #F1ECE6;">
+        <td style="padding: 12px 8px; font-family: sans-serif; font-size: 13px; color: #5C4033; font-weight: bold;">
+          ${item.title}
+        </td>
+        <td style="padding: 12px 8px; font-family: sans-serif; font-size: 13px; text-align: right; color: #A855F7; font-weight: 800;">
+          $${item.price.toFixed(2)}
+        </td>
+      </tr>
+    `).join('');
+
+    const htmlBody = `
+      <div style="background-color: #F8F6F2; padding: 40px 15px; font-family: sans-serif;">
+        <div style="background-color: #FFFFFF; max-width: 600px; margin: 0 auto; border: 1px solid #EEDDCC; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(92, 64, 51, 0.03);">
+          <div style="height: 6px; background-color: #22C55E;"></div>
+          <div style="padding: 32px 32px 16px 32px; text-align: center;">
+            <h1 style="color: #5C4033; font-family: Georgia, serif; margin: 0; font-size: 24px; font-weight: 900;">
+              Yarn<span style="color: #A855F7;">Craft Co</span>
+            </h1>
+            <div style="height: 1px; background-color: #F1ECE6; margin: 16px auto 0 auto; width: 60px;"></div>
+            <p style="margin: 12px 0 0 0; font-size: 11px; color: #8A7366; text-transform: uppercase; font-weight: bold; letter-spacing: 1.2px;">🎉 New Sale Notification 🎉</p>
+          </div>
+          <div style="padding: 0 32px 32px 32px; font-family: sans-serif; font-size: 14px; color: #5C4033; line-height: 1.6;">
+            <p>Hi Admin,</p>
+            <p>Cha-ching! A new sale has been registered on Yarn Craft Co.</p>
+            
+            <div style="background-color: #FBF7F0; border-radius: 12px; padding: 18px; margin: 24px 0; border: 1px solid #EEDDCC;">
+              <table style="width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 12px; color: #5C4033;">
+                <tr>
+                  <td style="padding: 4px 0; color: #8A7366; font-weight: bold; text-transform: uppercase; font-size: 9px; letter-spacing: 0.8px;">Order Reference</td>
+                  <td style="padding: 4px 0; text-align: right; font-family: monospace; font-weight: bold; font-size: 13px; color: #1F2937;">${orderId}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #8A7366; font-weight: bold; text-transform: uppercase; font-size: 9px; letter-spacing: 0.8px;">Total Amount</td>
+                  <td style="padding: 4px 0; text-align: right; color: #22C55E; font-weight: 800; font-size: 14px;">$${totalAmount.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #8A7366; font-weight: bold; text-transform: uppercase; font-size: 9px; letter-spacing: 0.8px;">Customer Email</td>
+                  <td style="padding: 4px 0; text-align: right; font-weight: bold; color: #1F2937;">${customerEmail}</td>
+                </tr>
+              </table>
+            </div>
+
+            <h3 style="color: #5C4033; font-family: Georgia, serif; font-size: 16px; font-weight: bold; border-bottom: 2px solid #EEDDCC; padding-bottom: 8px; margin-top: 32px; margin-bottom: 8px;">Items Purchased</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+              <thead>
+                <tr style="text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #8A7366;">
+                  <th style="padding: 8px 8px 8px 0; font-weight: bold;">Pattern details</th>
+                  <th style="padding: 8px; text-align: right; font-weight: bold; width: 80px;">Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <div style="text-align: center; margin: 24px 0 16px 0;">
+              <a href="${adminLink}" style="background-color: #22C55E; color: #ffffff; text-decoration: none; font-family: sans-serif; font-size: 13px; font-weight: bold; padding: 12px 28px; border-radius: 9999px; display: inline-block;">
+                Go to Admin Dashboard
+              </a>
+            </div>
+            
+            <div style="text-align: center; border-top: 1px solid #F1ECE6; padding-top: 24px; margin-top: 40px; font-size: 11px; color: #A19085;">
+              <p style="margin: 0;">© ${new Date().getFullYear()} Yarn Craft Co Store Alerts</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: `"Yarn Craft Co Shop" <${process.env.SMTP_USER || 'no-reply@yarncraftco.com'}>`,
+      to: adminEmail,
+      subject: `🎉 New Sale! $${totalAmount.toFixed(2)} - ${customerEmail}`,
+      html: htmlBody
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    if (nodemailer.getTestMessageUrl(info)) {
+      console.log('----------------------------------------------------');
+      console.log('✉ MOCK ADMIN SALE NOTIFICATION DISPATCHED!');
+      console.log(`Preview email in your browser: ${nodemailer.getTestMessageUrl(info)}`);
+      console.log('----------------------------------------------------');
+    }
+    return info;
+  } catch (error) {
+    console.error('Admin sale notification dispatch error:', error);
+    throw error;
+  }
+}

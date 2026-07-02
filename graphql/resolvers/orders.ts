@@ -5,7 +5,7 @@
 import Order from '@/models/Order';
 import Product from '@/models/Product';
 import User from '@/models/User';
-import { sendPatternEmail } from '@/lib/email';
+import { sendPatternEmail, sendAdminSaleNotification } from '@/lib/email';
 import { PAGE_SIZES } from '@/lib/config';
 import { validateOrderInput } from '@/lib/validators';
 import { isDbConnected, inMemoryOrders, inMemoryUsers, inMemoryProducts } from './shared';
@@ -121,6 +121,15 @@ export async function createOrder(input: CreateOrderInput, ctx: GraphQLContext) 
     items: resolvedItems,
     siteUrl: dynamicSiteUrl
   }).catch(err => console.error('Order email dispatch failed:', err));
+
+  // Notify admin of the new sale
+  sendAdminSaleNotification({
+    orderId: savedOrder._id.toString(),
+    customerEmail: orderData.customerEmail,
+    totalAmount: Number(input.totalAmount),
+    items: resolvedItems.map(item => ({ title: item.title, price: item.price })),
+    siteUrl: dynamicSiteUrl
+  }).catch(err => console.error('Admin sale notification email failed:', err));
 
   return savedOrder;
 }

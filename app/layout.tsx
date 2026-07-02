@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Poppins, Fraunces } from 'next/font/google';
 import './globals.css';
 import { CartProvider } from '@/context/CartContext';
+import { FavoritesProvider } from '@/context/FavoritesContext';
 import PromoBar from '@/components/PromoBar';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -56,16 +57,18 @@ export default function RootLayout({
       lang="en"
       className={`${poppins.variable} ${fraunces.variable} h-full antialiased`}
     >
-      <body className={`${poppins.variable} ${fraunces.variable} min-h-full flex flex-col bg-[#FFFDF9] text-[#1F2937] font-sans selection:bg-[#A855F7]/10 selection:text-[#A855F7]`}>
+      <body className={`${poppins.variable} ${fraunces.variable} min-h-full flex flex-col bg-white text-[#111111] font-sans selection:bg-[#A855F7]/10 selection:text-[#A855F7]`}>
         <FacebookPixel />
         <Suspense fallback={<div className="h-2 w-full bg-[#A855F7] animate-pulse" />}>
           <CartProvider>
-            <PromoBar />
-            <Header />
-            <main className="flex-grow flex flex-col">{children}</main>
-            <Footer />
-            <CartDrawer />
-            <ToastContainer />
+            <FavoritesProvider>
+              <PromoBar />
+              <Header />
+              <main className="flex-grow flex flex-col">{children}</main>
+              <Footer />
+              <CartDrawer />
+              <ToastContainer />
+            </FavoritesProvider>
           </CartProvider>
         </Suspense>
       </body>

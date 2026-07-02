@@ -13,6 +13,7 @@ export interface IProduct extends Document {
   size?: string;
   languages: string[];
   featured: boolean;
+  runAd?: boolean;
   createdAt: Date;
 }
 
@@ -36,6 +37,7 @@ const ProductSchema = new Schema<IProduct>({
   size: { type: String },
   languages: { type: [String], default: ['English'] },
   featured: { type: Boolean, default: false },
+  runAd: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 

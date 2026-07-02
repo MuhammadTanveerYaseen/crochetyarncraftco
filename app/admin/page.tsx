@@ -32,6 +32,7 @@ import Link from 'next/link';
 import { graphqlRequest } from '@/lib/graphqlClient';
 import { useCart } from '@/context/CartContext';
 import ProductCard from '@/components/ProductCard';
+import RichTextEditor from '@/components/RichTextEditor';
 
 export default function AdminDashboard() {
   const { showToast } = useCart();
@@ -45,9 +46,10 @@ export default function AdminDashboard() {
     storageProvider: 'Local Storage'
   });
   
-  const [activeAdminTab, setActiveAdminTab] = useState<'listings' | 'reports' | 'users'>('listings');
+  const [activeAdminTab, setActiveAdminTab] = useState<'listings' | 'orders' | 'reports' | 'users'>('listings');
   const [reports, setReports] = useState<any[]>([]);
   const [usersList, setUsersList] = useState<any[]>([]);
+  const [ordersList, setOrdersList] = useState<any[]>([]);
   const [marketingOpen, setMarketingOpen] = useState(false);
   const [promoSubject, setPromoSubject] = useState('🧶 Exclusive Offer from Yarn Craft Co!');
   const [promoCodeInput, setPromoCodeInput] = useState('MAKER20');
@@ -86,6 +88,7 @@ export default function AdminDashboard() {
   const [size, setSize] = useState('');
   const [languages, setLanguages] = useState('English');
   const [featured, setFeatured] = useState(false);
+  const [runAd, setRunAd] = useState(false);
 
   // File uploading states
   const [imageUploading, setImageUploading] = useState(false);
@@ -262,6 +265,32 @@ export default function AdminDashboard() {
         console.warn("Could not load users for admin dashboard:", err);
       }
 
+      // Load orders
+      const ordersQuery = `
+        query GetAdminOrders {
+          orders {
+            _id
+            customerEmail
+            totalAmount
+            status
+            createdAt
+            items {
+              productId
+              title
+              price
+            }
+          }
+        }
+      `;
+      try {
+        const ordersData = await graphqlRequest(ordersQuery);
+        if (ordersData && ordersData.orders) {
+          setOrdersList(ordersData.orders);
+        }
+      } catch (err) {
+        console.warn("Could not load orders for admin dashboard:", err);
+      }
+
       // Load campaigns history
       const campaignsQuery = `
         query GetCampaignHistory {
@@ -406,6 +435,7 @@ export default function AdminDashboard() {
     setSize('');
     setLanguages('English');
     setFeatured(false);
+    setRunAd(false);
     setStatusMessage(null);
     setIsCustomCategory(false);
     setCustomCategoryName('');
@@ -436,6 +466,7 @@ export default function AdminDashboard() {
     setSize(product.size || '');
     setLanguages(Array.isArray(product.languages) ? product.languages.join(', ') : 'English');
     setFeatured(!!product.featured);
+    setRunAd(!!product.runAd);
     setStatusMessage(null);
     setIsCustomCategory(false);
     setCustomCategoryName('');
@@ -548,7 +579,8 @@ export default function AdminDashboard() {
       materials: materials ? materials.split(',').map(m => m.trim()).filter(Boolean) : [],
       size: size || null,
       languages: languages ? languages.split(',').map(l => l.trim()).filter(Boolean) : ['English'],
-      featured
+      featured,
+      runAd
     };
 
     try {
@@ -570,6 +602,7 @@ export default function AdminDashboard() {
             $size: String
             $languages: [String!]
             $featured: Boolean
+            $runAd: Boolean
           ) {
             updateProduct(
               id: $id
@@ -585,6 +618,7 @@ export default function AdminDashboard() {
               size: $size
               languages: $languages
               featured: $featured
+              runAd: $runAd
             ) {
               _id
             }
@@ -620,6 +654,7 @@ export default function AdminDashboard() {
               size: $size
               languages: $languages
               featured: $featured
+              runAd: $runAd
             ) {
               _id
             }
@@ -690,6 +725,138 @@ export default function AdminDashboard() {
     } catch (err: any) {
       console.error('Bulk deletion error:', err);
       showToast(err.message || 'Error occurred during bulk deletion', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Bulk Discount Application
+  const handleBulkDiscountApply = async (discountPercent: number) => {
+    if (isNaN(discountPercent) || discountPercent <= 0 || discountPercent > 100) {
+      showToast('Please enter a valid discount percentage between 1 and 100.', 'error');
+      return;
+    }
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Are you sure you want to apply a ${discountPercent}% discount to the ${selectedIds.length} selected patterns?`)) return;
+
+    setLoading(true);
+    const updateMutation = `
+      mutation UpdateProductBulk(
+        $id: ID!
+        $salePrice: Float
+      ) {
+        updateProduct(
+          id: $id
+          salePrice: $salePrice
+        ) {
+          _id
+        }
+      }
+    `;
+
+    try {
+      let successCount = 0;
+      for (const id of selectedIds) {
+        // Find the product in local state to get the original base price
+        const product = products.find(p => p._id === id);
+        if (product) {
+          const originalPrice = parseFloat(product.price);
+          if (!isNaN(originalPrice) && originalPrice > 0) {
+            const calculatedSale = originalPrice * (1 - discountPercent / 100);
+            await graphqlRequest(updateMutation, {
+              id,
+              salePrice: parseFloat(calculatedSale.toFixed(2))
+            });
+            successCount++;
+          }
+        }
+      }
+      setSelectedIds([]);
+      await loadData();
+      showToast(`Successfully applied ${discountPercent}% discount to ${successCount} patterns!`, 'success');
+    } catch (err: any) {
+      console.error('Bulk discount application error:', err);
+      showToast(err.message || 'Error occurred while applying bulk discount.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Bulk Discount Clearance
+  const handleBulkClearDiscount = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Are you sure you want to clear promotional discounts and restore base pricing for the ${selectedIds.length} selected patterns?`)) return;
+
+    setLoading(true);
+    const updateMutation = `
+      mutation ClearProductDiscountBulk(
+        $id: ID!
+        $salePrice: Float
+      ) {
+        updateProduct(
+          id: $id
+          salePrice: $salePrice
+        ) {
+          _id
+        }
+      }
+    `;
+
+    try {
+      let successCount = 0;
+      for (const id of selectedIds) {
+        await graphqlRequest(updateMutation, {
+          id,
+          salePrice: null
+        });
+        successCount++;
+      }
+      setSelectedIds([]);
+      await loadData();
+      showToast(`Successfully cleared sale prices for ${successCount} patterns.`, 'success');
+    } catch (err: any) {
+      console.error('Bulk discount clear error:', err);
+      showToast(err.message || 'Error occurred while clearing bulk discounts.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Bulk Ad Toggling
+  const handleBulkAdToggle = async (active: boolean) => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Are you sure you want to ${active ? 'enable' : 'disable'} advertisements for the ${selectedIds.length} selected patterns?`)) return;
+
+    setLoading(true);
+    const updateMutation = `
+      mutation UpdateProductAdBulk(
+        $id: ID!
+        $runAd: Boolean
+      ) {
+        updateProduct(
+          id: $id
+          runAd: $runAd
+        ) {
+          _id
+        }
+      }
+    `;
+
+    try {
+      let successCount = 0;
+      for (const id of selectedIds) {
+        await graphqlRequest(updateMutation, {
+          id,
+          runAd: active
+        });
+        successCount++;
+      }
+      setSelectedIds([]);
+      await loadData();
+      showToast(`Successfully ${active ? 'started' : 'stopped'} ads for ${successCount} patterns!`, 'success');
+    } catch (err: any) {
+      console.error('Bulk ad toggle error:', err);
+      showToast(err.message || 'Error occurred while updating promotional ads.', 'error');
     } finally {
       setLoading(false);
     }
@@ -840,6 +1007,21 @@ export default function AdminDashboard() {
           </button>
           
           <button
+            onClick={() => setActiveAdminTab('orders')}
+            className={`pb-3 text-sm font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
+              activeAdminTab === 'orders' 
+                ? 'text-[#A855F7]' 
+                : 'text-[#5C4033]/60 hover:text-[#A855F7]'
+            }`}
+          >
+            <Coins className="w-4 h-4" />
+            <span>Orders & Sales ({ordersList.length})</span>
+            {activeAdminTab === 'orders' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#A855F7] rounded-full" />
+            )}
+          </button>
+
+          <button
             onClick={() => setActiveAdminTab('reports')}
             className={`pb-3 text-sm font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
               activeAdminTab === 'reports' 
@@ -923,6 +1105,79 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+          {selectedIds.length > 0 && (
+            <div className="bg-[#A855F7]/5 border border-[#A855F7]/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fadeIn">
+              <div className="flex items-center gap-2">
+                <span className="bg-[#A855F7] text-white text-[10px] font-black px-2.5 py-1 rounded-full">
+                  {selectedIds.length} Selected
+                </span>
+                <span className="text-xs font-bold text-[#5C4033]">Bulk Actions Manager:</span>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* Bulk Discount Input and Button */}
+                <div className="flex items-center gap-1.5 bg-white border border-[#EEDDCC] rounded-xl px-2.5 py-1.5 shadow-xs">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase">Discount:</span>
+                  <input
+                    type="number"
+                    placeholder="20"
+                    id="bulkDiscountPct"
+                    className="w-10 bg-transparent text-xs font-black text-[#A855F7] text-center border-none outline-none"
+                    min="1"
+                    max="100"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const val = (document.getElementById('bulkDiscountPct') as HTMLInputElement)?.value;
+                        if (val) handleBulkDiscountApply(parseInt(val));
+                      }
+                    }}
+                  />
+                  <span className="text-xs font-black text-gray-400">%</span>
+                  <button
+                    onClick={() => {
+                      const val = (document.getElementById('bulkDiscountPct') as HTMLInputElement)?.value;
+                      if (val) handleBulkDiscountApply(parseInt(val));
+                    }}
+                    className="ml-2 bg-[#A855F7] hover:bg-[#9333EA] text-white text-[10px] font-black uppercase px-3 py-1 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Apply
+                  </button>
+                </div>
+
+                {/* Bulk Clear Sale */}
+                <button
+                  onClick={handleBulkClearDiscount}
+                  className="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-[10px] font-black uppercase tracking-wider px-3.5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                >
+                  Clear Discounts
+                </button>
+
+                {/* Bulk Start/Stop Ads */}
+                <button
+                  onClick={() => handleBulkAdToggle(true)}
+                  className="bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-[10px] font-black uppercase tracking-wider px-3 py-2.5 rounded-xl transition-all cursor-pointer"
+                >
+                  Start Ads
+                </button>
+
+                <button
+                  onClick={() => handleBulkAdToggle(false)}
+                  className="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 text-[10px] font-black uppercase tracking-wider px-3 py-2.5 rounded-xl transition-all cursor-pointer"
+                >
+                  Stop Ads
+                </button>
+
+                {/* Bulk Delete */}
+                <button
+                  onClick={handleBulkDelete}
+                  className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-[10px] font-black uppercase tracking-wider px-3.5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Selected</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {filteredProducts.length === 0 ? (
             <div className="text-center py-16 text-gray-400 text-sm">
               No crochet patterns found matching the selected criteria.
@@ -979,8 +1234,13 @@ export default function AdminDashboard() {
                             <div>
                               <p className="font-bold text-[#5C4033] line-clamp-1">{p.title}</p>
                               {p.featured && (
-                                <span className="bg-[#5C4033] text-[#FFFDF9] text-[8px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-sm mt-0.5 inline-block">
+                                <span className="bg-[#5C4033] text-[#FFFDF9] text-[8px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-sm mt-0.5 inline-block mr-1">
                                   Featured
+                                </span>
+                              )}
+                              {p.runAd && (
+                                <span className="bg-[#A855F7] text-white text-[8px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-sm mt-0.5 inline-block">
+                                  AD Active
                                 </span>
                               )}
                             </div>
@@ -1031,6 +1291,78 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+        )}
+
+        {activeAdminTab === 'orders' && (
+          <div className="bg-white border border-[#EEDDCC] rounded-3xl p-6 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#FFF8EF] pb-4">
+              <div className="space-y-1">
+                <h3 className="font-serif font-black text-lg flex items-center gap-2">
+                  <Coins className="w-5 h-5 text-[#A855F7]" />
+                  <span>Orders & Sales Log</span>
+                </h3>
+                <p className="text-xs text-gray-500 font-medium">Log of checkout transactions, downloads, and customer details.</p>
+              </div>
+            </div>
+
+            {ordersList.length === 0 ? (
+              <div className="text-center py-16 text-gray-400 text-sm">
+                No orders or transactions found in the database.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs select-text">
+                  <thead>
+                    <tr className="border-b border-[#EEDDCC] text-gray-400 uppercase font-black tracking-wider text-[10px]">
+                      <th className="py-3.5 px-4 font-black">Order ID</th>
+                      <th className="py-3.5 px-4 font-black">Customer Email</th>
+                      <th className="py-3.5 px-4 font-black">Patterns Purchased</th>
+                      <th className="py-3.5 px-4 font-black">Transaction Date</th>
+                      <th className="py-3.5 px-4 text-right font-black">Total Revenue</th>
+                      <th className="py-3.5 px-4 text-center font-black">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#FFF8EF]">
+                    {ordersList.map((order) => {
+                      const dateStr = order.createdAt
+                        ? new Date(Number(order.createdAt) ? Number(order.createdAt) : order.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        : 'Recently';
+
+                      return (
+                        <tr key={order._id} className="hover:bg-[#FBF7F0]/30 transition-colors">
+                          <td className="py-4 px-4 font-mono font-bold text-[#5C4033] select-text">{order._id}</td>
+                          <td className="py-4 px-4 font-semibold text-gray-700">{order.customerEmail}</td>
+                          <td className="py-4 px-4 max-w-xs">
+                            <div className="space-y-1">
+                              {order.items?.map((item: any, idx: number) => (
+                                <div key={idx} className="flex justify-between items-center gap-2 bg-[#FBF7F0] px-2 py-1 rounded border border-[#EEDDCC]/40">
+                                  <span className="font-bold text-gray-600 line-clamp-1">{item.title}</span>
+                                  <span className="text-[10px] text-[#A855F7] font-black">${item.price.toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 text-gray-400 font-semibold">{dateStr}</td>
+                          <td className="py-4 px-4 text-right font-black text-emerald-600">${order.totalAmount.toFixed(2)}</td>
+                          <td className="py-4 px-4 text-center">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 font-black uppercase tracking-wider rounded-xl text-[9px]">
+                              {order.status || 'Completed'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
 
         {activeAdminTab === 'reports' && (
@@ -1430,13 +1762,10 @@ export default function AdminDashboard() {
 
               <div className="space-y-1">
                 <label className="text-xs font-bold uppercase">Detailed Description *</label>
-                <textarea
-                  required
-                  rows={4}
-                  placeholder="Explain pattern details, skill levels, stitching methods, and row counts..."
+                <RichTextEditor
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-[#FBF7F0] border border-[#EEDDCC] focus:border-[#A855F7] rounded-xl py-2.5 px-4 text-xs text-[#1F2937] outline-none resize-none leading-relaxed"
+                  onChange={setDescription}
+                  placeholder="Explain pattern details, skill levels, stitching methods, and row counts..."
                 />
               </div>
             </div>
@@ -1617,18 +1946,33 @@ export default function AdminDashboard() {
             </div>
 
             {/* Featured toggle & Language spec */}
-            <div className="border-t border-[#EEDDCC] pt-5 flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="featured-drawer"
-                  checked={featured}
-                  onChange={(e) => setFeatured(e.target.checked)}
-                  className="w-4 h-4 text-[#A855F7] border-[#EEDDCC] rounded accent-[#A855F7]"
-                />
-                <label htmlFor="featured-drawer" className="text-xs font-bold uppercase select-none cursor-pointer">
-                  Feature Pattern in Hero Sections
-                </label>
+            <div className="border-t border-[#EEDDCC] pt-5 flex items-center justify-between flex-wrap gap-4">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="featured-drawer"
+                    checked={featured}
+                    onChange={(e) => setFeatured(e.target.checked)}
+                    className="w-4 h-4 text-[#A855F7] border-[#EEDDCC] rounded accent-[#A855F7]"
+                  />
+                  <label htmlFor="featured-drawer" className="text-xs font-bold uppercase select-none cursor-pointer">
+                    Feature Pattern in Hero Sections
+                  </label>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="runad-drawer"
+                    checked={runAd}
+                    onChange={(e) => setRunAd(e.target.checked)}
+                    className="w-4 h-4 text-[#A855F7] border-[#EEDDCC] rounded accent-[#A855F7]"
+                  />
+                  <label htmlFor="runad-drawer" className="text-xs font-bold uppercase select-none cursor-pointer">
+                    Run Advertisement (Show in Promo Banners)
+                  </label>
+                </div>
               </div>
 
               <div className="flex items-center gap-1 text-xs">

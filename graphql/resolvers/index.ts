@@ -27,6 +27,7 @@ export const resolvers = {
   updateProduct: (args: any, ctx: GraphQLContext) => productResolvers.updateProduct(args, ctx),
   deleteProduct: (args: any, ctx: GraphQLContext) => productResolvers.deleteProduct(args, ctx),
   categories: () => productResolvers.categories(),
+  notifyAdminProductFavorited: (args: any, ctx: GraphQLContext) => productResolvers.notifyAdminProductFavorited(args, ctx),
 
   // ── Orders ────────────────────────────────────────────────────────────────
   orders: (args: any, ctx: GraphQLContext) => orderResolvers.orders(args, ctx),

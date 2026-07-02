@@ -65,6 +65,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const { id } = await params;
   let product: any = null;
   let similarProducts: any[] = [];
+  let promotedProducts: any[] = [];
 
   try {
     const rawProduct = await resolvers.product({ id });
@@ -73,6 +74,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
       
       const rawSimProducts = await resolvers.products({ category: product.category });
       similarProducts = JSON.parse(JSON.stringify(rawSimProducts))
+        .filter((p: any) => p._id !== id)
+        .slice(0, 4);
+
+      const rawPromotedProducts = await resolvers.products({ category: product.category, runAd: true });
+      promotedProducts = JSON.parse(JSON.stringify(rawPromotedProducts))
         .filter((p: any) => p._id !== id)
         .slice(0, 4);
     }
@@ -138,7 +144,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       />
       
       {/* Delegate interactive states to Client Component */}
-      <ProductDetailClient product={product} similarProducts={similarProducts} />
+      <ProductDetailClient product={product} similarProducts={similarProducts} promotedProducts={promotedProducts} />
     </>
   );
 }

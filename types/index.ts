@@ -26,6 +26,7 @@ export interface Product {
   size?: string;
   languages?: string[];
   featured?: boolean;
+  runAd?: boolean;
   createdAt?: string;
 }
 
@@ -36,6 +37,7 @@ export interface ProductFilters {
   sort?: SortOption;
   limit?: number;
   offset?: number;
+  runAd?: boolean;
 }
 
 export interface CreateProductInput {
@@ -51,6 +53,7 @@ export interface CreateProductInput {
   size?: string;
   languages?: string[];
   featured?: boolean;
+  runAd?: boolean;
 }
 
 export type UpdateProductInput = Partial<CreateProductInput> & { id: string };

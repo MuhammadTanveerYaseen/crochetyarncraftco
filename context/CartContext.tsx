@@ -21,6 +21,7 @@ export interface Toast {
 interface CartContextType {
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
+  addMultipleToCart: (items: CartItem[]) => void;
   removeFromCart: (itemId: string) => void;
   clearCart: () => void;
   isCartOpen: boolean;
@@ -97,6 +98,35 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const addMultipleToCart = (items: CartItem[]) => {
+    const newItems = items.filter(item => !cart.some(i => i._id === item._id));
+    if (newItems.length > 0) {
+      const newCart = [...cart, ...newItems];
+      saveCart(newCart);
+      if (newItems.length === 1) {
+        showToast(`"${newItems[0].title}" added to cart!`, 'success');
+      } else {
+        showToast(`${newItems.length} patterns added to cart!`, 'success');
+      }
+      setIsCartOpen(true);
+
+      // Track AddToCart event in Facebook Pixel for each new item
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        newItems.forEach(item => {
+          (window as any).fbq('track', 'AddToCart', {
+            content_ids: [item._id],
+            content_name: item.title,
+            content_type: 'product',
+            value: item.salePrice ?? item.price,
+            currency: 'USD'
+          });
+        });
+      }
+    } else {
+      showToast('Selected patterns are already in your cart!', 'info');
+    }
+  };
+
   const removeFromCart = (itemId: string) => {
     const item = cart.find((i) => i._id === itemId);
     const newCart = cart.filter((i) => i._id !== itemId);
@@ -111,13 +141,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Calculate pricing rules
-  // Buy 2 Get 1 Free (cheapest of every 3 items is free)
+  // Buy 2 Get 1 Free (cheapest of every 3 items is free), or 10% off for exactly 2 items
   const getPrices = () => {
     const sortedPrices = cart.map(item => item.salePrice ?? item.price).sort((a, b) => a - b);
     
     const originalTotal = sortedPrices.reduce((sum, price) => sum + price, 0);
-    const freeItemsCount = Math.floor(sortedPrices.length / 3);
-    const discount = sortedPrices.slice(0, freeItemsCount).reduce((sum, price) => sum + price, 0);
+    
+    let discount = 0;
+    if (sortedPrices.length >= 2) {
+      const freeItemsCount = Math.floor(sortedPrices.length / 2);
+      discount = sortedPrices.slice(0, freeItemsCount).reduce((sum, price) => sum + price, 0);
+    }
+    
     const total = Math.max(0, originalTotal - discount);
 
     return {
@@ -134,6 +169,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         cart,
         addToCart,
+        addMultipleToCart,
         removeFromCart,
         clearCart,
         isCartOpen,

@@ -15,6 +15,7 @@ export const schema = buildSchema(`
     size: String
     languages: [String!]
     featured: Boolean
+    runAd: Boolean
     createdAt: String
   }
 
@@ -84,7 +85,7 @@ export const schema = buildSchema(`
   }
 
   type Query {
-    products(category: String, difficulty: String, search: String, sort: String, limit: Int, offset: Int): [Product!]!
+    products(category: String, difficulty: String, search: String, sort: String, limit: Int, offset: Int, runAd: Boolean): [Product!]!
     product(id: ID!): Product
     orders(limit: Int, offset: Int): [Order!]!
     dashboardStats: DashboardStats!
@@ -114,6 +115,7 @@ export const schema = buildSchema(`
       size: String
       languages: [String!]
       featured: Boolean
+      runAd: Boolean
     ): Product!
 
     updateProduct(
@@ -130,6 +132,7 @@ export const schema = buildSchema(`
       size: String
       languages: [String!]
       featured: Boolean
+      runAd: Boolean
     ): Product!
 
     deleteProduct(id: ID!): Boolean!
@@ -152,6 +155,9 @@ export const schema = buildSchema(`
 
     # Marketing Mutations
     sendBulkPromoEmail(subject: String!, promoCode: String!, discountPercent: Int!, message: String!, segment: String!): Int!
+
+    # Favorites Notification
+    notifyAdminProductFavorited(productId: ID!, userEmail: String): Boolean!
   }
 `);
 export default schema;

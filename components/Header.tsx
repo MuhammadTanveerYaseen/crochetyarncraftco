@@ -5,10 +5,12 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Search, ShoppingBag, Heart, Scissors, Settings, User, LogIn } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useFavorites } from '@/context/FavoritesContext';
 import { graphqlRequest } from '@/lib/graphqlClient';
 
 export default function Header() {
   const { cart, setIsCartOpen, showToast } = useCart();
+  const { favorites } = useFavorites();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -98,14 +100,21 @@ export default function Header() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-            {/* Wishlist Link (visual only) */}
-            <button 
-              onClick={() => showToast("Favorites feature is coming soon! Browse our patterns to start styling.", "info")}
-              className="p-2 text-[#5C4033] hover:bg-[#FBF7F0] rounded-full transition-colors relative"
+            {/* Wishlist Link */}
+            <Link 
+              href="/favorites"
+              className={`p-2 rounded-full transition-colors relative ${
+                pathname === '/favorites' ? 'bg-[#A855F7]/10 text-[#A855F7]' : 'text-[#5C4033] hover:bg-[#FBF7F0]'
+              }`}
               aria-label="Wishlist"
             >
-              <Heart className="w-6 h-6" />
-            </button>
+              <Heart className={`w-6 h-6 ${favorites.length > 0 ? 'text-rose-500 fill-rose-500' : ''}`} />
+              {favorites.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center animate-bounce">
+                  {favorites.length}
+                </span>
+              )}
+            </Link>
 
             {/* Admin Dashboard Navigation */}
             {currentUser?.role === 'admin' && (
