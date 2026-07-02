@@ -19,7 +19,6 @@ export default function Footer() {
         
         {/* Compulsory Links */}
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 font-semibold">
-          <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
           <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
           <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
           <Link href="/refunds" className="hover:text-white transition-colors">Refund Policy</Link>
