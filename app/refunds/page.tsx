@@ -1,8 +1,15 @@
-'use client';
-
 import React from 'react';
 import { ShieldCheck, HeartHandshake } from 'lucide-react';
 import Link from 'next/link';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '100% Stitch-Help & Refund Guarantee | Yarn Craft Co',
+  description: 'Learn about our 100% stitch-help guarantee and digital downloads return policy. Get support if you get stuck on any crochet row or stitch instruction.',
+  alternates: {
+    canonical: 'https://yarncraftco.com/refunds',
+  },
+};
 
 export default function RefundsPage() {
   return (

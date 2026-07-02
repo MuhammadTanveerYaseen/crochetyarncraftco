@@ -1,8 +1,15 @@
-'use client';
-
 import React from 'react';
 import { FileText, ArrowRight, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service & Maker Licenses | Yarn Craft Co',
+  description: 'Read the Yarn Craft Co terms of service. Guidelines for digital pattern downloads, maker licenses, personal craft projects, and selling finished toys.',
+  alternates: {
+    canonical: 'https://yarncraftco.com/terms',
+  },
+};
 
 export default function TermsPage() {
   return (

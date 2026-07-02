@@ -89,6 +89,7 @@ export default function AdminDashboard() {
   const [languages, setLanguages] = useState('English');
   const [featured, setFeatured] = useState(false);
   const [runAd, setRunAd] = useState(false);
+  const [tags, setTags] = useState('');
 
   // File uploading states
   const [imageUploading, setImageUploading] = useState(false);
@@ -436,6 +437,7 @@ export default function AdminDashboard() {
     setLanguages('English');
     setFeatured(false);
     setRunAd(false);
+    setTags('');
     setStatusMessage(null);
     setIsCustomCategory(false);
     setCustomCategoryName('');
@@ -467,6 +469,7 @@ export default function AdminDashboard() {
     setLanguages(Array.isArray(product.languages) ? product.languages.join(', ') : 'English');
     setFeatured(!!product.featured);
     setRunAd(!!product.runAd);
+    setTags(Array.isArray(product.tags) ? product.tags.join(', ') : '');
     setStatusMessage(null);
     setIsCustomCategory(false);
     setCustomCategoryName('');
@@ -580,13 +583,13 @@ export default function AdminDashboard() {
       size: size || null,
       languages: languages ? languages.split(',').map(l => l.trim()).filter(Boolean) : ['English'],
       featured,
-      runAd
+      runAd,
+      tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : []
     };
 
     try {
       let gqlMutation = '';
       if (editingId) {
-        // Edit Mutation
         gqlMutation = `
           mutation EditProduct(
             $id: ID!
@@ -603,6 +606,7 @@ export default function AdminDashboard() {
             $languages: [String!]
             $featured: Boolean
             $runAd: Boolean
+            $tags: [String!]
           ) {
             updateProduct(
               id: $id
@@ -619,6 +623,7 @@ export default function AdminDashboard() {
               languages: $languages
               featured: $featured
               runAd: $runAd
+              tags: $tags
             ) {
               _id
             }
@@ -640,6 +645,8 @@ export default function AdminDashboard() {
             $size: String
             $languages: [String!]
             $featured: Boolean
+            $runAd: Boolean
+            $tags: [String!]
           ) {
             createProduct(
               title: $title
@@ -655,6 +662,7 @@ export default function AdminDashboard() {
               languages: $languages
               featured: $featured
               runAd: $runAd
+              tags: $tags
             ) {
               _id
             }
@@ -1854,6 +1862,17 @@ export default function AdminDashboard() {
                     className="w-full bg-[#FBF7F0] border border-[#EEDDCC] focus:border-[#A855F7] rounded-xl py-2.5 px-4 text-xs text-[#1F2937] outline-none"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase">Google SEO Ranking Tags (comma separated)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. amigurumi giraffe, crochet patterns, easy crochet, beginner guide"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  className="w-full bg-[#FBF7F0] border border-[#EEDDCC] focus:border-[#A855F7] rounded-xl py-2.5 px-4 text-xs text-[#1F2937] outline-none"
+                />
               </div>
             </div>
 

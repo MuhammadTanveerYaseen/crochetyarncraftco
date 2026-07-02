@@ -9,6 +9,7 @@ import * as productResolvers from './products';
 import * as orderResolvers from './orders';
 import * as authResolvers from './auth';
 import * as reportResolvers from './reports';
+import * as reviewResolvers from './reviews';
 import { dashboardStats } from './stats';
 import type { GraphQLContext } from '@/types';
 
@@ -47,6 +48,11 @@ export const resolvers = {
   reports: (args: any, ctx: GraphQLContext) => reportResolvers.reports(args, ctx),
   createReport: (args: any) => reportResolvers.createReport(args),
   resolveReport: (args: any, ctx: GraphQLContext) => reportResolvers.resolveReport(args, ctx),
+
+  // ── Reviews ───────────────────────────────────────────────────────────────
+  reviews: (args: any) => reviewResolvers.reviews(args),
+  createReview: (args: any) => reviewResolvers.createReview(args),
+  markReviewHelpful: (args: any) => reviewResolvers.markReviewHelpful(args),
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
   dashboardStats: (_: any, ctx: GraphQLContext) => dashboardStats(_, ctx),

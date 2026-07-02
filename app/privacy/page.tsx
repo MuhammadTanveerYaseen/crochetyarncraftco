@@ -1,8 +1,15 @@
-'use client';
-
 import React from 'react';
 import { Eye, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy & Maker Data Safety | Yarn Craft Co',
+  description: 'How Yarn Craft Co secures and protects your maker data. Read about safe pattern downloads, instant email PDF deliveries, and secure checkouts.',
+  alternates: {
+    canonical: 'https://yarncraftco.com/privacy',
+  },
+};
 
 export default function PrivacyPage() {
   return (

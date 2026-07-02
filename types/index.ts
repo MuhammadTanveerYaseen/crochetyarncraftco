@@ -27,6 +27,7 @@ export interface Product {
   languages?: string[];
   featured?: boolean;
   runAd?: boolean;
+  tags?: string[];
   createdAt?: string;
 }
 
@@ -54,6 +55,7 @@ export interface CreateProductInput {
   languages?: string[];
   featured?: boolean;
   runAd?: boolean;
+  tags?: string[];
 }
 
 export type UpdateProductInput = Partial<CreateProductInput> & { id: string };

@@ -108,6 +108,7 @@ export async function createProduct(args: CreateProductInput, ctx: GraphQLContex
     languages: args.languages ?? ['English'],
     featured: !!args.featured,
     runAd: !!args.runAd,
+    tags: args.tags ?? [],
     createdAt: new Date().toISOString(),
   };
 

@@ -14,6 +14,7 @@ export interface IProduct extends Document {
   languages: string[];
   featured: boolean;
   runAd?: boolean;
+  tags?: string[];
   createdAt: Date;
 }
 
@@ -38,11 +39,12 @@ const ProductSchema = new Schema<IProduct>({
   languages: { type: [String], default: ['English'] },
   featured: { type: Boolean, default: false },
   runAd: { type: Boolean, default: false },
+  tags: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now }
 });
 
 // Full-text search index (used by $text operator in products resolver)
-ProductSchema.index({ title: 'text', description: 'text' });
+ProductSchema.index({ title: 'text', description: 'text', tags: 'text' });
 
 // Compound indexes matching sort patterns in the storefront query
 ProductSchema.index({ featured: -1, createdAt: -1 }); // Sort: featured

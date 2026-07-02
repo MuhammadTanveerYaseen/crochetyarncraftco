@@ -36,10 +36,27 @@ export async function generateMetadata({ params }: PageProps) {
   return {
     title: siteTitle,
     description: siteDescription,
+    keywords: [
+      product.title.toLowerCase(),
+      `${product.title.toLowerCase()} crochet pattern`,
+      `${product.title.toLowerCase()} pdf guide`,
+      `${product.category.toLowerCase()} crochet patterns`,
+      `${product.difficulty.toLowerCase()} level crochet tutorial`,
+      'easy amigurumi crochet pattern',
+      'crochet plushie pattern pdf',
+      'step by step crochet amigurumi',
+      'printable pdf crochet pattern',
+      'row-by-row crochet instructions',
+      'instant download digital pattern',
+      'yarn craft patterns shop'
+    ],
+    alternates: {
+      canonical: `https://yarncraftco.com/products/${product._id}`,
+    },
     openGraph: {
       title: siteTitle,
       description: siteDescription,
-      url: `/products/${product._id}`,
+      url: `https://yarncraftco.com/products/${product._id}`,
       siteName: 'Yarn Craft Co Shop',
       images: [
         {
@@ -57,6 +74,17 @@ export async function generateMetadata({ params }: PageProps) {
       title: siteTitle,
       description: siteDescription,
       images: [mainImage]
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     }
   };
 }

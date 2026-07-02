@@ -17,11 +17,13 @@ import {
   Plus,
   Gift,
   Heart,
-  Sparkles
+  Sparkles,
+  ThumbsUp
 } from 'lucide-react';
 import { useCart, CartItem } from '@/context/CartContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import ProductCard from '@/components/ProductCard';
+import { graphqlRequest } from '@/lib/graphqlClient';
 
 interface ProductDetailClientProps {
   product: any;
@@ -31,10 +33,134 @@ interface ProductDetailClientProps {
 
 export default function ProductDetailClient({ product, similarProducts, promotedProducts = [] }: ProductDetailClientProps) {
   const router = useRouter();
-  const { addToCart, addMultipleToCart, cart } = useCart();
+  const { addToCart, addMultipleToCart, cart, showToast } = useCart();
   const { toggleFavorite, isFavorited } = useFavorites();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const isFavorite = isFavorited(product._id);
+
+  // Reviews State
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [writeOpen, setWriteOpen] = useState(false);
+  const [reviewName, setReviewName] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [helpfulClicked, setHelpfulClicked] = useState<Record<string, boolean>>({});
+
+  const fetchReviews = async () => {
+    try {
+      const query = `
+        query GetProductReviews($productId: ID!) {
+          reviews(productId: $productId) {
+            _id
+            name
+            rating
+            comment
+            helpfulCount
+            createdAt
+          }
+        }
+      `;
+      const data = await graphqlRequest(query, { productId: product._id });
+      if (data && data.reviews) {
+        setReviews(data.reviews);
+      }
+    } catch (err) {
+      console.error('Failed to load reviews:', err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
+  }, [product._id]);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewName.trim() || !reviewComment.trim()) {
+      showToast('Please fill out all fields.', 'error');
+      return;
+    }
+    setReviewSubmitting(true);
+    try {
+      const mutation = `
+        mutation SubmitProductReview($productId: ID!, $name: String!, $rating: Int!, $comment: String!) {
+          createReview(productId: $productId, name: $name, rating: $rating, comment: $comment) {
+            _id
+            name
+            rating
+            comment
+            helpfulCount
+            createdAt
+          }
+        }
+      `;
+      const data = await graphqlRequest(mutation, {
+        productId: product._id,
+        name: reviewName,
+        rating: reviewRating,
+        comment: reviewComment
+      });
+      if (data && data.createReview) {
+        showToast('Review submitted successfully! Thank you.', 'success');
+        setReviews(prev => [data.createReview, ...prev]);
+        // Reset form
+        setReviewName('');
+        setReviewRating(5);
+        setReviewComment('');
+        setWriteOpen(false);
+      }
+    } catch (err: any) {
+      console.error('Error submitting review:', err);
+      showToast(err.message || 'Error submitting review.', 'error');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const handleMarkHelpful = async (reviewId: string) => {
+    if (helpfulClicked[reviewId]) return;
+    try {
+      const mutation = `
+        mutation VoteReviewHelpful($reviewId: ID!) {
+          markReviewHelpful(reviewId: $reviewId) {
+            _id
+            helpfulCount
+          }
+        }
+      `;
+      const data = await graphqlRequest(mutation, { reviewId });
+      if (data && data.markReviewHelpful) {
+        setHelpfulClicked(prev => ({ ...prev, [reviewId]: true }));
+        setReviews(prev =>
+          prev.map(r =>
+            r._id === reviewId
+              ? { ...r, helpfulCount: data.markReviewHelpful.helpfulCount }
+              : r
+          )
+        );
+        showToast('Marked as helpful.', 'success');
+      }
+    } catch (err) {
+      console.error('Error voting helpful:', err);
+    }
+  };
+
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex items-center gap-0.5">
+        {[...Array(5)].map((_, i) => (
+          <Star 
+            key={i} 
+            className={`w-3.5 h-3.5 ${i < rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} 
+          />
+        ))}
+      </div>
+    );
+  };
 
   // Bundle Selector State
   const [selectedBundleTier, setSelectedBundleTier] = useState<number>(
@@ -622,6 +748,199 @@ export default function ProductDetailClient({ product, similarProducts, promoted
             </div>
 
           </div>
+        </div>
+
+        {/* Dynamic Etsy-Style Reviews Section */}
+        <div className="border-t border-gray-200 pt-12 space-y-8 font-sans">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+              <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+              <span>Customer Reviews ({reviews.length})</span>
+            </h2>
+            
+            <button
+              onClick={() => setWriteOpen(!writeOpen)}
+              className="btn-primary py-2.5 px-6 text-xs font-black uppercase tracking-wider rounded-none cursor-pointer hover:bg-[#9333EA]"
+            >
+              {writeOpen ? 'Close Form' : 'Write a Review'}
+            </button>
+          </div>
+
+          {/* Expanded Write a Review Form */}
+          {writeOpen && (
+            <form onSubmit={handleSubmitReview} className="bg-gray-50 border border-gray-200 p-6 space-y-4 max-w-xl animate-scaleUp">
+              <h3 className="font-bold text-gray-900 text-sm">Write Your Crochet Review</h3>
+              
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-gray-400 block">Your Rating *</label>
+                <div className="flex items-center gap-1.5 py-1">
+                  {[1, 2, 3, 4, 5].map((starVal) => {
+                    const isLit = hoverRating !== null ? starVal <= hoverRating : starVal <= reviewRating;
+                    return (
+                      <button
+                        key={starVal}
+                        type="button"
+                        onClick={() => setReviewRating(starVal)}
+                        onMouseEnter={() => setHoverRating(starVal)}
+                        onMouseLeave={() => setHoverRating(null)}
+                        className="cursor-pointer focus:outline-none transition-colors"
+                      >
+                        <Star className={`w-6 h-6 transition-all ${isLit ? 'text-amber-400 fill-amber-400 scale-110' : 'text-gray-300'}`} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-gray-400 block">Your Name / Nickname *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Sarah M."
+                  value={reviewName}
+                  onChange={(e) => setReviewName(e.target.value)}
+                  className="w-full bg-white border border-gray-200 focus:border-[#A855F7] rounded-none py-2 px-3 text-xs text-gray-900 outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-gray-400 block">Review Comments *</label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Tell other makers how easy the stitches were, your finished dimensions, or any tips..."
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  className="w-full bg-white border border-gray-200 focus:border-[#A855F7] rounded-none py-2 px-3 text-xs text-gray-900 outline-none resize-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={reviewSubmitting}
+                className="btn-primary w-full py-3 text-xs font-black uppercase tracking-wider rounded-none cursor-pointer flex items-center justify-center gap-2 hover:bg-[#9333EA] disabled:opacity-50"
+              >
+                {reviewSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    <span>Submitting Review...</span>
+                  </>
+                ) : (
+                  <span>Publish Review</span>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* Breakdown Statistics Grid */}
+          {reviews.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center bg-gray-50 border border-gray-200 p-6">
+              {/* Average Rating Block */}
+              <div className="text-center space-y-2 border-b md:border-b-0 md:border-r border-gray-200 pb-6 md:pb-0 md:pr-6">
+                <p className="text-5xl font-black text-gray-900 tracking-tight">
+                  {(() => {
+                    const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+                    return avg.toFixed(1);
+                  })()}
+                </p>
+                <div className="flex justify-center">
+                  {renderStars(Math.round(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length))}
+                </div>
+                <p className="text-xs text-gray-500 font-semibold">Average rating from {reviews.length} reviews</p>
+              </div>
+
+              {/* Ratios Breakdown Block */}
+              <div className="md:col-span-2 space-y-2">
+                {[5, 4, 3, 2, 1].map((stars) => {
+                  const count = reviews.filter(r => r.rating === stars).length;
+                  const pct = reviews.length > 0 ? Math.round((count / reviews.length) * 100) : 0;
+                  return (
+                    <div key={stars} className="flex items-center gap-3 text-xs">
+                      <span className="w-12 text-gray-600 font-semibold">{stars} stars</span>
+                      <div className="flex-grow h-2.5 bg-gray-200 overflow-hidden rounded-none">
+                        <div 
+                          className="h-full bg-amber-400 transition-all duration-500" 
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="w-8 text-right text-gray-500 font-semibold">{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Reviews List */}
+          {reviewsLoading ? (
+            <div className="space-y-4">
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="border border-gray-200 p-5 space-y-3 animate-pulse bg-white">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-gray-100" />
+                    <div className="space-y-1 flex-grow">
+                      <div className="h-3 bg-gray-100 rounded-md w-1/4" />
+                      <div className="h-3 bg-gray-100 rounded-md w-1/5" />
+                    </div>
+                  </div>
+                  <div className="h-4 bg-gray-100 rounded-md w-3/4" />
+                  <div className="h-4 bg-gray-100 rounded-md w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : reviews.length === 0 ? (
+            <div className="text-center py-10 bg-gray-50 border border-gray-200">
+              <p className="text-xs text-gray-500 font-bold">Be the first to review this pattern! Tap "Write a Review" above to share your stitches.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((rev) => (
+                <div key={rev._id} className="bg-white border border-gray-200 p-5 space-y-3 flex flex-col justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gray-100 border border-gray-200 rounded-full flex items-center justify-center font-bold text-xs text-[#A855F7]">
+                        {rev.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-gray-900">{rev.name}</p>
+                        <p className="text-[10px] text-gray-400">
+                          {new Date(rev.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      {renderStars(rev.rating)}
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-gray-600 leading-relaxed font-medium pl-1 select-text">
+                    {rev.comment}
+                  </p>
+
+                  <div className="flex items-center gap-2 pt-2 border-t border-gray-100 text-[10px] pl-1">
+                    <span className="text-gray-400 font-semibold">Was this review helpful?</span>
+                    <button
+                      onClick={() => handleMarkHelpful(rev._id)}
+                      disabled={helpfulClicked[rev._id]}
+                      className={`inline-flex items-center gap-1 py-1 px-2.5 border transition-all ${
+                        helpfulClicked[rev._id]
+                          ? 'bg-emerald-50 text-emerald-600 border-emerald-100 cursor-default'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400 cursor-pointer'
+                      }`}
+                    >
+                      <ThumbsUp className="w-3 h-3" />
+                      <span className="font-bold">Yes ({rev.helpfulCount})</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Promoted Listings Related to This Item */}

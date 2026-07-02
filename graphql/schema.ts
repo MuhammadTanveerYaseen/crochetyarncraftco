@@ -16,6 +16,7 @@ export const schema = buildSchema(`
     languages: [String!]
     featured: Boolean
     runAd: Boolean
+    tags: [String!]
     createdAt: String
   }
 
@@ -64,6 +65,16 @@ export const schema = buildSchema(`
     createdAt: String
   }
 
+  type Review {
+    _id: ID!
+    productId: ID!
+    name: String!
+    rating: Int!
+    comment: String!
+    helpfulCount: Int!
+    createdAt: String!
+  }
+
   type AuthPayload {
     user: User!
     token: String!
@@ -99,6 +110,9 @@ export const schema = buildSchema(`
     
     # Support Reports Query (admin, paginated)
     reports(limit: Int, offset: Int): [Report!]!
+    
+    # Reviews Query
+    reviews(productId: ID!): [Review!]!
   }
 
   type Mutation {
@@ -116,6 +130,7 @@ export const schema = buildSchema(`
       languages: [String!]
       featured: Boolean
       runAd: Boolean
+      tags: [String!]
     ): Product!
 
     updateProduct(
@@ -133,6 +148,7 @@ export const schema = buildSchema(`
       languages: [String!]
       featured: Boolean
       runAd: Boolean
+      tags: [String!]
     ): Product!
 
     deleteProduct(id: ID!): Boolean!
@@ -158,6 +174,10 @@ export const schema = buildSchema(`
 
     # Favorites Notification
     notifyAdminProductFavorited(productId: ID!, userEmail: String): Boolean!
+
+    # Reviews Mutations
+    createReview(productId: ID!, name: String!, rating: Int!, comment: String!): Review!
+    markReviewHelpful(reviewId: ID!): Review!
   }
 `);
 export default schema;
